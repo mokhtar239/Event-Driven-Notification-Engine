@@ -40,8 +40,9 @@ export class EventIngestionConsumer {
 
       return;
     } catch (error) {
+
       this.logger.error(
-        `Error processing message on ${routingKey}: ${error.message}`,
+        `Error processing message on ${routingKey}: ${(error as Error).message}`,
       );
       return new Nack(true); // requeue
     }

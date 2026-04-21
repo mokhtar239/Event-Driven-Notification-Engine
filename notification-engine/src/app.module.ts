@@ -8,6 +8,7 @@ import { HealthModule } from './modules/health/health.module';
 import { TemplateModule } from './modules/template/template.module';
 import { DeliveryModule } from './modules/delivery/delivery.module';
 import { PreferencesModule } from './modules/preferences/preferences.module';
+import { EventIngestionModule } from './modules/event-ingestion/event-ingestion.module';
 
 @Module({
   imports: [

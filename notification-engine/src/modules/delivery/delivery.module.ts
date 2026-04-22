@@ -4,10 +4,7 @@ import {
   Notification,
   NotificationSchema,
 } from './schemas/notification.schema';
-import {
-  DeliveryLog,
-  DeliveryLogSchema,
-} from './schemas/delivery-log.schema';
+import { DeliveryLog, DeliveryLogSchema } from './schemas/delivery-log.schema';
 
 @Module({
   imports: [

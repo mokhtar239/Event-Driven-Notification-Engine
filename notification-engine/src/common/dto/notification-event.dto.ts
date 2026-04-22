@@ -16,4 +16,12 @@ export class NotificationEventDto {
   @IsOptional()
   @IsObject()
   data?: Record<string, unknown>;
+
+  @IsOptional()
+  @IsString()
+  occurredAt?: string;
+
+  @IsOptional()
+  @IsString()
+  correlationId?: string;
 }

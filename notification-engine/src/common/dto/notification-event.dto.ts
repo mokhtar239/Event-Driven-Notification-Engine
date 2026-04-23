@@ -1,27 +1,24 @@
-import { IsString, IsNotEmpty, IsOptional, IsObject } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsObject, IsUUID, IsISO8601, Matches } from 'class-validator';
 
 export class NotificationEventDto {
-  @IsString()
-  @IsNotEmpty()
+  @Matches(/^[a-z]+\.[a-z_]+$/, { message: 'eventType must match "<domain>.<action>" e.g. order.placed' })
   eventType!: string;
 
-  @IsString()
-  @IsNotEmpty()
+  @IsUUID()
   userId!: string;
 
-  @IsOptional()
-  @IsString()
-  tenantId?: string;
+  @IsUUID()
+  tenantId!: string;
 
-  @IsOptional()
   @IsObject()
-  data?: Record<string, unknown>;
+  data!: Record<string, unknown>;
 
   @IsOptional()
-  @IsString()
+  @IsISO8601()
   occurredAt?: string;
 
   @IsOptional()
   @IsString()
+  @IsNotEmpty()
   correlationId?: string;
 }

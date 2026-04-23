@@ -1,5 +1,6 @@
+import { EventIngestionService } from './event-ingestion.service';
 import { Injectable, Logger } from '@nestjs/common';
-import {Nack,RabbitSubscribe}from '@golevelup/nestjs-rabbitmq';
+import { Nack, RabbitSubscribe } from '@golevelup/nestjs-rabbitmq';
 import { ConsumeMessage } from 'amqplib';
 import {
   EVENT_DLQ,
@@ -8,9 +9,13 @@ import {
   EVENT_MAIN_QUEUE,
 } from '../../config/rabbitmq.config';
 import { NotificationEventDto } from '../../common/dto/notification-event.dto';
+import { plainToClass, plainToInstance } from 'class-transformer';
+import { validateOrReject } from 'class-validator';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class EventIngestionConsumer {
+  constructor(private readonly eventIngestionService: EventIngestionService) {}
   private readonly logger = new Logger(EventIngestionConsumer.name);
 
   @RabbitSubscribe({
@@ -27,25 +32,19 @@ export class EventIngestionConsumer {
   })
   async handleEvent(msg: NotificationEventDto, amqpMsg: ConsumeMessage) {
     const routingKey = amqpMsg.fields.routingKey;
+    const dto = plainToInstance(NotificationEventDto, msg);
+
     try {
-      if (!msg.eventType || !msg.userId) {
-        this.logger.warn(`Invalid payload on ${routingKey}: missing fields`);
-        return new Nack(false); // remove from queue immediately
-      }
-
-      this.logger.log(
-        `Received event ${msg.eventType} (rk=${routingKey}) for user=${msg.userId}`,
-      );
-      // TODO : validate schema -> route to channel queues
-
-      return;
+      await validateOrReject(dto);
     } catch (error) {
-
       this.logger.error(
-        `Error processing message on ${routingKey}: ${(error as Error).message}`,
+        `Validation failed for message rk=${routingKey}: ${JSON.stringify(msg)}. Error: ${error}`,
       );
-      return new Nack(true); // requeue
+      return new Nack(false);
     }
+    const correlationId = dto.correlationId ?? randomUUID();
+    await this.eventIngestionService.ingestEvent(dto, correlationId);
+    
   }
   @RabbitSubscribe({
     exchange: EVENT_DLX,

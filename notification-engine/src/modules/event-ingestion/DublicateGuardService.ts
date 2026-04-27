@@ -9,7 +9,7 @@ export class DublicateGuardService {
 
   private generateKey(event: Event): string {
     const text = `${event.eventType}:${event.userId}:${event.occurredAt ?? ''}:${JSON.stringify(event.data ?? {})}`;
-    const key = `seen :${createHash('sha256').update(text).digest('hex')}`;
+    const key = `seen:${createHash('sha256').update(text).digest('hex')}`;
     return key;
   }
 

@@ -1,7 +1,17 @@
-import { IsString, IsNotEmpty, IsOptional, IsObject, IsUUID, IsISO8601, Matches } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsObject,
+  IsUUID,
+  IsISO8601,
+  Matches,
+} from 'class-validator';
 
 export class NotificationEventDto {
-  @Matches(/^[a-z]+\.[a-z_]+$/, { message: 'eventType must match "<domain>.<action>" e.g. order.placed' })
+  @Matches(/^[a-z]+\.[a-z_]+$/, {
+    message: 'eventType must match "<domain>.<action>" e.g. order.placed',
+  })
   eventType!: string;
 
   @IsUUID()

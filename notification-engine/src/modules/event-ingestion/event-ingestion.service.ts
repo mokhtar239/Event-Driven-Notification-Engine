@@ -2,15 +2,16 @@ import { Injectable, Logger } from '@nestjs/common';
 import { NotificationEventDto as Event } from '../../common/dto/notification-event.dto';
 import { EventRouter } from './event-ingestion.router';
 import { DublicateGuardService } from './DublicateGuardService';
+import { randomUUID } from 'crypto';
 
 interface IngestionResult {
   success: boolean;
-  state: 'DUBLICATE' | 'ROUTED' | 'UNKNOWN_TYPE';
+  correlationId?: string;
 }
 
 @Injectable()
 export class EventIngestionService {
-  private readonly Logger = new Logger(EventIngestionService.name);
+  private readonly logger = new Logger(EventIngestionService.name);
 
   constructor(
     private readonly eventRouter: EventRouter,
@@ -28,31 +29,32 @@ export class EventIngestionService {
       tenantId: event.tenantId,
     };
 
-    // check if event is not known
-    const Route = this.eventRouter.resolve(event.eventType);
-    if (!Route) {
-      this.Logger.warn(`Unknown event type: ${event.eventType}`, loggedEvent);
-      return { success: false, state: 'UNKNOWN_TYPE' };
+    const route = this.eventRouter.resolve(event.eventType);
+    if (!route) {
+      this.logger.warn(`Unknown event type: ${event.eventType}`, loggedEvent);
+      return { success: false, correlationId };
     }
 
-    // check if event is dublicate
     const fresh = await this.dublicateGuard.isFresh(event);
     if (!fresh) {
-      this.Logger.warn(
-        `Dublicate event detected: ${event.eventType} for user ${event.userId}`,
+      this.logger.warn(
+        `Duplicate event detected: ${event.eventType} for user ${event.userId}`,
         loggedEvent,
       );
-      return { success: false, state: 'DUBLICATE' };
+      return { success: false, correlationId };
     }
 
-    // route event to channels
-    this.Logger.log(
-      `Event routed: ${event.eventType} for user ${event.userId} via channels ${Route.channels.join(', ')}`,
+    const notificationId: string = randomUUID();
+    await this.eventRouter.dispatch(
+      { ...event, correlationId },
+      notificationId,
+    );
+
+    this.logger.log(
+      `Event routed: ${event.eventType} for user ${event.userId} via channels ${route.channels.join(', ')}`,
       loggedEvent,
     );
 
-    // route Events Here
-
-    return { success: true, state: 'ROUTED' };
+    return { success: true, correlationId };
   }
 }

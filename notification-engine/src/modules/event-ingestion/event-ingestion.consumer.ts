@@ -9,7 +9,7 @@ import {
   EVENT_MAIN_QUEUE,
 } from '../../config/rabbitmq.config';
 import { NotificationEventDto } from '../../common/dto/notification-event.dto';
-import { plainToClass, plainToInstance } from 'class-transformer';
+import { plainToInstance } from 'class-transformer';
 import { validateOrReject } from 'class-validator';
 import { randomUUID } from 'crypto';
 
@@ -30,7 +30,7 @@ export class EventIngestionConsumer {
       },
     },
   })
-  async handleEvent(msg: NotificationEventDto, amqpMsg: ConsumeMessage) {
+  async handleEvent(msg: unknown, amqpMsg: ConsumeMessage) {
     const routingKey = amqpMsg.fields.routingKey;
     const dto = plainToInstance(NotificationEventDto, msg);
 
@@ -42,10 +42,18 @@ export class EventIngestionConsumer {
       );
       return new Nack(false);
     }
+
     const correlationId = dto.correlationId ?? randomUUID();
-    await this.eventIngestionService.ingestEvent(dto, correlationId);
-    
+    try {
+      await this.eventIngestionService.ingestEvent(dto, correlationId);
+    } catch (err) {
+      this.logger.error(
+        `Ingest failed rk=${routingKey} correlationId=${correlationId}: ${(err as Error).message}`,
+      );
+      return new Nack(false);
+    }
   }
+
   @RabbitSubscribe({
     exchange: EVENT_DLX,
     routingKey: '#',

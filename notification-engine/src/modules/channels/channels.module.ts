@@ -1,6 +1,11 @@
+import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { ChannelType } from '@common/enums/channel-type.enum';
-import { Module } from '@nestjs/common/decorators/modules/module.decorator';
+import { EmailWorker } from './email/email.worker';
+import { SmsWorker } from './sms/sms.worker';
+import { PushWorker } from './push/push.worker';
+import { InappWorker } from './inapp/inapp.worker';
+
 @Module({
   imports: [
     BullModule.registerQueue(
@@ -10,6 +15,7 @@ import { Module } from '@nestjs/common/decorators/modules/module.decorator';
       { name: ChannelType.INAPP },
     ),
   ],
+  providers: [EmailWorker, SmsWorker, PushWorker, InappWorker],
   exports: [BullModule],
 })
 export class ChannelsModule {}

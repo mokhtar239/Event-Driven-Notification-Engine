@@ -9,6 +9,7 @@ import { TemplateModule } from './modules/template/template.module';
 import { DeliveryModule } from './modules/delivery/delivery.module';
 import { PreferencesModule } from './modules/preferences/preferences.module';
 import { EventIngestionModule } from './modules/event-ingestion/event-ingestion.module';
+import { BullModule } from '@nestjs/bullmq';
 
 @Module({
   imports: [
@@ -22,10 +23,20 @@ import { EventIngestionModule } from './modules/event-ingestion/event-ingestion.
         uri: config.get<string>('MONGO_URI'),
       }),
     }),
+    BullModule.forRootAsync({
+      useFactory: (config: ConfigService) => ({
+        connection: {
+          host: config.get<string>('REDIS_HOST'),
+          port: config.get<number>('REDIS_PORT'),
+        },
+      }),
+      inject: [ConfigService],
+    }),
     HealthModule,
     TemplateModule,
     DeliveryModule,
     PreferencesModule,
+    EventIngestionModule,
   ],
   controllers: [AppController],
   providers: [AppService],

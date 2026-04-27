@@ -8,9 +8,11 @@ import { EventIngestionController } from './event-ingestion.controller';
 import { EventIngestionService } from './event-ingestion.service';
 import { EventRouter } from './event-ingestion.router';
 import { DublicateGuardService } from './DublicateGuardService';
+import { ChannelsModule } from '@modules/channels/channels.module';
 
 @Module({
   imports: [
+    ChannelsModule,
     RabbitMQModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

@@ -7,6 +7,6 @@ export interface NotificationJobData {
   event: string;
   templateId: string;
   priority: number;
-  variables: Record<string, any>;
-  metadata: Record<string, any>;
+  variables: Record<string, string>;
+  metadata: Record<string, string>;
 }

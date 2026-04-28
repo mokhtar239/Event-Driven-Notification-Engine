@@ -5,6 +5,7 @@ import { EmailWorker } from './email/email.worker';
 import { SmsWorker } from './sms/sms.worker';
 import { PushWorker } from './push/push.worker';
 import { InappWorker } from './inapp/inapp.worker';
+import { EmailService } from './email/emailService';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { InappWorker } from './inapp/inapp.worker';
       { name: ChannelType.INAPP },
     ),
   ],
-  providers: [EmailWorker, SmsWorker, PushWorker, InappWorker],
+  providers: [EmailWorker, SmsWorker, PushWorker, InappWorker, EmailService],
   exports: [BullModule],
 })
 export class ChannelsModule {}

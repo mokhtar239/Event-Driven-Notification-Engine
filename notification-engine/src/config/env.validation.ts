@@ -11,4 +11,7 @@ export const envSchema = Joi.object({
   RABBITMQ_URL: Joi.string().required(),
   RESEND_API_KEY: Joi.string().required(),
   EMAIL_FROM: Joi.string().email().default('onboarding@resend.dev'),
+  TWILIO_ACCOUNT_SID: Joi.string().required(),
+  TWILIO_AUTH_TOKEN: Joi.string().required(),
+  TWILIO_FROM: Joi.string().required(),
 });

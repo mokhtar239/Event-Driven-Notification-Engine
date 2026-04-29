@@ -11,8 +11,8 @@ export class EmailService implements IChannel {
   private readonly from: string;
 
   constructor(config: ConfigService) {
-    this.client = new Resend(config.getOrThrow<string>('email.apiKey'));
-    this.from = config.getOrThrow<string>('email.from');
+    this.client = new Resend(config.getOrThrow<string>('RESEND_API_KEY'));
+    this.from = config.getOrThrow<string>('EMAIL_FROM');
   }
 
   async send(payload: ChannelPayload): Promise<DeliveryResult> {

@@ -4,6 +4,8 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { envSchema } from './config/env.validation';
+import emailConfig from './config/email.config';
+import smsConfig from './config/sms.config';
 import { HealthModule } from './modules/health/health.module';
 import { TemplateModule } from './modules/template/template.module';
 import { DeliveryModule } from './modules/delivery/delivery.module';
@@ -16,6 +18,7 @@ import { BullModule } from '@nestjs/bullmq';
     ConfigModule.forRoot({
       isGlobal: true,
       validationSchema: envSchema,
+      load: [emailConfig, smsConfig],
     }),
     MongooseModule.forRootAsync({
       inject: [ConfigService],

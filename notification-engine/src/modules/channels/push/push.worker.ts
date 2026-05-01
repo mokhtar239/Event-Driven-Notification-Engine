@@ -2,17 +2,20 @@ import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { Logger } from '@nestjs/common';
 import { NotificationJobData } from '../../../common/interfaces/notification-job.interface';
+import { PushService } from './pushService';
 
 @Processor('push')
 export class PushWorker extends WorkerHost {
   private readonly logger = new Logger(PushWorker.name);
 
-  process(job: Job<NotificationJobData>): Promise<void> {
-    this.logger.log(
-      `Processing push job notificationId=${job.data.NotificationId} correlationId=${job.data.metadata?.correlationId}`,
-    );
-    // firebase admin sdk here
-    return Promise.resolve();
+  constructor(private readonly push: PushService) {
+    super();
+  }
+
+  async process(job: Job<NotificationJobData>): Promise<void> {
+    const { token, title, body } = job.data.variables;
+    const result = await this.push.send({ to: token, subject: title, body });
+    if (!result.success) throw new Error(result.error);
   }
 
   @OnWorkerEvent('completed')

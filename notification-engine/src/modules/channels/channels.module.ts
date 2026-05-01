@@ -7,7 +7,7 @@ import { PushWorker } from './push/push.worker';
 import { InappWorker } from './inapp/inapp.worker';
 import { EmailService } from './email/emailService';
 import { SmsService } from './sms/smsService';
-import emailConfig from 'src/config/email.config';
+import { PushService } from './push/pushService';
 
 @Module({
   imports: [
@@ -25,6 +25,7 @@ import emailConfig from 'src/config/email.config';
     InappWorker,
     EmailService,
     SmsService,
+    PushService,
   ],
   exports: [BullModule],
 })

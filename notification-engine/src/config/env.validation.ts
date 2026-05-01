@@ -14,4 +14,6 @@ export const envSchema = Joi.object({
   TWILIO_ACCOUNT_SID: Joi.string().required(),
   TWILIO_AUTH_TOKEN: Joi.string().required(),
   TWILIO_FROM: Joi.string().required(),
+  FIREBASE_SERVICE_ACCOUNT_JSON: Joi.string().required(),
+  PUSH_DRY_RUN: Joi.string().valid('true', 'false').default('true'),
 });

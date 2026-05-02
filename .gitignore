@@ -64,3 +64,7 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 # Scratch
 data.txt
+
+# Personal docs (kept local, not pushed)
+CLAUDE.md
+notification_engine.pdf

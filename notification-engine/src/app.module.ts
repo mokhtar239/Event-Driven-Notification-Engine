@@ -1,3 +1,4 @@
+import { RedisModule } from './modules/redis/redis.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -41,6 +42,7 @@ import { BullModule } from '@nestjs/bullmq';
     DeliveryModule,
     PreferencesModule,
     EventIngestionModule,
+    RedisModule,
   ],
   controllers: [AppController],
   providers: [AppService],

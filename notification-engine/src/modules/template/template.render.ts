@@ -29,7 +29,7 @@ export class TemplateRender {
     }
     return this.cashedTemplates.get(key) as Handlebars.TemplateDelegate;
   }
-  private renderCashed(
+  renderCashed(
     key: string,
     text: string,
     vars: Record<string, unknown>,

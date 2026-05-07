@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Template, TemplateSchema } from './schemas/template.schema';
+import { TemplateService } from './template.service';
+import { TemplateController } from './template.controller';
+import { TemplateRender } from './template.render';
 
 @Module({
   imports: [
@@ -8,6 +11,8 @@ import { Template, TemplateSchema } from './schemas/template.schema';
       { name: Template.name, schema: TemplateSchema },
     ]),
   ],
-  exports: [MongooseModule],
+  controllers: [TemplateController],
+  providers: [TemplateService, TemplateRender],
+  exports: [TemplateService, MongooseModule],
 })
 export class TemplateModule {}

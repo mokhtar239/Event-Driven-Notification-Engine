@@ -1,10 +1,12 @@
 import { REDIS_CLIENT } from '../redis/redis.module';
 import Redis from 'ioredis';
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { TemplateDocument } from './schemas/template.schema';
+import { Template, TemplateDocument } from './schemas/template.schema';
 import { TemplateRender } from './template.render';
+import { CreateTemplateDto } from './dto/create-template.dto';
+import { UpdateTemplateDto } from './dto/update-template.dto';
 
 const TEMPLATE_CACHE_TTL = 60 * 60; // 1 hour
 const TEMPLATE_LOCK_TTL = 5; // 5 second
@@ -13,7 +15,7 @@ const TEMPLATE_LOCK_TTL = 5; // 5 second
 export class TemplateService {
   constructor(
     @Inject(REDIS_CLIENT) private redisClient: Redis,
-    @InjectModel('Template') private templateModel: Model<TemplateDocument>,
+    @InjectModel(Template.name) private templateModel: Model<TemplateDocument>,
     private renderer: TemplateRender,
   ) {}
 
@@ -57,12 +59,13 @@ export class TemplateService {
     }
     // got lock , or retry failed, query db
     try {
+      console.log('query db excute');
       const template = await this.templateModel
         .findOne({ tenantId, eventType, channel })
         .sort({ version: -1 })
         .lean();
       if (!template) {
-        throw new Error(
+        throw new NotFoundException(
           `Template not found for tenantId=${tenantId}, eventType=${eventType}, channel=${channel}`,
         );
       }
@@ -102,5 +105,45 @@ export class TemplateService {
     await this.redisClient.del(
       this.keyOfTemplate(tenantId, eventType, channel),
     );
+  }
+
+  async create(dto: CreateTemplateDto) {
+    const created = await this.templateModel.create({
+      ...dto,
+      version: dto.version ?? 1,
+      isActive: dto.isActive ?? true,
+    });
+    await this.invalidateCache(dto.tenantId, dto.eventType, dto.channel);
+    return created;
+  }
+
+  async list(filter: {
+    tenantId?: string;
+    eventType?: string;
+    channel?: string;
+  }) {
+    return this.templateModel.find(filter).lean();
+  }
+
+  async getById(id: string) {
+    const tpl = await this.templateModel.findById(id).lean();
+    if (!tpl) throw new NotFoundException(`Template ${id} not found`);
+    return tpl;
+  }
+
+  async update(id: string, dto: UpdateTemplateDto) {
+    const tpl = await this.templateModel
+      .findByIdAndUpdate(id, dto, { new: true })
+      .lean();
+    if (!tpl) throw new NotFoundException(`Template ${id} not found`);
+    await this.invalidateCache(tpl.tenantId, tpl.eventType, tpl.channel);
+    return tpl;
+  }
+
+  async remove(id: string) {
+    const tpl = await this.templateModel.findByIdAndDelete(id).lean();
+    if (!tpl) throw new NotFoundException(`Template ${id} not found`);
+    await this.invalidateCache(tpl.tenantId, tpl.eventType, tpl.channel);
+    return { deleted: true, id };
   }
 }

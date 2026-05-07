@@ -38,7 +38,7 @@ export class TemplateRender {
     const output = templateFunction(vars);
     return output;
   }
-  private renderOnce(text: string, vars: Record<string, unknown>): string {
+  renderOnce(text: string, vars: Record<string, unknown>): string {
     const output = Handlebars.compile(text)(vars);
     return output;
   }

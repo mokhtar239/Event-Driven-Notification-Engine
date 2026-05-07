@@ -5,6 +5,8 @@ import { Logger } from '@nestjs/common';
 import { NotificationJobData } from '../../../common/interfaces/notification-job.interface';
 import { InappService } from './inapp.service';
 import { DeliveryResult } from '@common/interfaces/delivery-result.interface';
+import { TemplateService } from '../../template/template.service';
+import { ChannelType } from '@common/enums/channel-type.enum';
 
 @Processor('inapp')
 export class InappWorker extends WorkerHost {
@@ -13,25 +15,33 @@ export class InappWorker extends WorkerHost {
   constructor(
     private readonly inappService: InappService,
     private readonly InappGateway: InappGateway,
+    private readonly templateService: TemplateService,
   ) {
     super();
   }
+
   async process(job: Job<NotificationJobData>): Promise<DeliveryResult> {
+    const { event, tenantId, variables, userId } = job.data;
     this.logger.log(
       `Processing inapp job notificationId=${job.data.NotificationId} correlationId=${job.data.metadata?.correlationId}`,
     );
-    const { title, body } = job.data.variables;
+    const { subject, body } = await this.templateService.renderTemplate(
+      tenantId,
+      event,
+      ChannelType.INAPP,
+      variables,
+    );
     const result = await this.inappService.send({
-      to: job.data.userId,
-      subject: title,
-      body,
+      to: userId,
+      subject: subject ?? '',
+      body: body ?? '',
     });
     if (!result.success) {
       throw new Error(
         `Failed to send inapp notification for notificationId=${job.data.NotificationId}`,
       );
     }
-    this.InappGateway.emit(job.data.userId, { subject: title, body });
+    this.InappGateway.emit(userId, { subject: subject ?? '', body: body ?? '' });
     return result;
   }
 

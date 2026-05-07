@@ -15,6 +15,7 @@ import {
   InappNotification,
   InappNotificationSchema,
 } from './inapp/schemas/inapp-notification.schema';
+import { TemplateModule } from '../template/template.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import {
     MongooseModule.forFeature([
       { name: InappNotification.name, schema: InappNotificationSchema },
     ]),
+    TemplateModule,
   ],
   providers: [
     EmailWorker,

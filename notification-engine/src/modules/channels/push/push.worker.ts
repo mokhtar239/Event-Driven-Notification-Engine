@@ -3,18 +3,33 @@ import { Job } from 'bullmq';
 import { Logger } from '@nestjs/common';
 import { NotificationJobData } from '../../../common/interfaces/notification-job.interface';
 import { PushService } from './pushService';
+import { TemplateService } from '../../template/template.service';
+import { ChannelType } from '@common/enums/channel-type.enum';
 
 @Processor('push')
 export class PushWorker extends WorkerHost {
   private readonly logger = new Logger(PushWorker.name);
 
-  constructor(private readonly push: PushService) {
+  constructor(
+    private readonly push: PushService,
+    private readonly templateService: TemplateService,
+  ) {
     super();
   }
 
   async process(job: Job<NotificationJobData>): Promise<void> {
-    const { token, title, body } = job.data.variables;
-    const result = await this.push.send({ to: token, subject: title, body });
+    const { event, tenantId, variables } = job.data;
+    const { subject, body } = await this.templateService.renderTemplate(
+      tenantId,
+      event,
+      ChannelType.PUSH,
+      variables,
+    );
+    const result = await this.push.send({
+      to: variables.token,
+      subject: subject ?? '',
+      body: body ?? '',
+    });
     if (!result.success) throw new Error(result.error);
   }
 

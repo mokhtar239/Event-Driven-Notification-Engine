@@ -3,22 +3,34 @@ import { Job } from 'bullmq';
 import { Logger } from '@nestjs/common';
 import { NotificationJobData } from '../../../common/interfaces/notification-job.interface';
 import { SmsService } from './smsService';
+import { TemplateService } from '../../template/template.service';
+import { ChannelType } from '@common/enums/channel-type.enum';
 
 @Processor('sms')
 export class SmsWorker extends WorkerHost {
   private readonly logger = new Logger(SmsWorker.name);
 
-  constructor(private readonly smsService: SmsService) {
+  constructor(
+    private readonly smsService: SmsService,
+    private readonly templateService: TemplateService,
+  ) {
     super();
   }
 
   async process(job: Job<NotificationJobData>): Promise<void> {
+    const { event, tenantId, variables } = job.data;
     this.logger.log(
       `Processing sms job notificationId=${job.data.NotificationId} correlationId=${job.data.metadata?.correlationId}`,
     );
+    const { body } = await this.templateService.renderTemplate(
+      tenantId,
+      event,
+      ChannelType.SMS,
+      variables,
+    );
     await this.smsService.send({
-      to: job.data.variables.phone,
-      body: job.data.variables.body,
+      to: variables.phone,
+      body: body ?? '',
     });
   }
 

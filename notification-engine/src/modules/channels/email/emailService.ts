@@ -25,7 +25,10 @@ export class EmailService implements IChannel {
 
     if (error) {
       this.logger.warn(`Resend rejected: ${error.message}`);
-      return { success: false, error: error.message, timestamp: new Date() };
+      throw Object.assign(new Error(error.message), {
+        name: error.name,
+        statusCode: (error as { statusCode?: number }).statusCode,
+      });
     }
 
     return { success: true, messageId: data.id, timestamp: new Date() };

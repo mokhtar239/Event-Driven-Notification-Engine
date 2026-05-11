@@ -5,6 +5,7 @@ import { NotificationJobData } from '../../../common/interfaces/notification-job
 import { SmsService } from './smsService';
 import { TemplateService } from '../../template/template.service';
 import { ChannelType } from '@common/enums/channel-type.enum';
+import { throwClassifiedSms } from './sms.errors';
 
 @Processor('sms')
 export class SmsWorker extends WorkerHost {
@@ -28,10 +29,14 @@ export class SmsWorker extends WorkerHost {
       ChannelType.SMS,
       variables,
     );
-    await this.smsService.send({
-      to: variables.phone,
-      body: body ?? '',
-    });
+    try {
+      await this.smsService.send({
+        to: variables.phone,
+        body: body ?? '',
+      });
+    } catch (err) {
+      throwClassifiedSms(err);
+    }
   }
 
   @OnWorkerEvent('completed')

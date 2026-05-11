@@ -41,7 +41,10 @@ export class InappWorker extends WorkerHost {
         `Failed to send inapp notification for notificationId=${job.data.NotificationId}`,
       );
     }
-    this.InappGateway.emit(userId, { subject: subject ?? '', body: body ?? '' });
+    this.InappGateway.emit(userId, {
+      subject: subject ?? '',
+      body: body ?? '',
+    });
     return result;
   }
 

@@ -12,8 +12,16 @@ const PERMANENT_FIREBASE_CODES = new Set<string>([
   'messaging/mismatched-credential',
 ]);
 
-export function throwClassifiedPush(err: any): never {
-  const fbCode: string | undefined = err?.errorInfo?.code ?? err?.code;
+function readProp(obj: unknown, key: string): unknown {
+  if (obj && typeof obj === 'object' && key in obj) {
+    return (obj as Record<string, unknown>)[key];
+  }
+  return undefined;
+}
+
+export function throwClassifiedPush(err: unknown): never {
+  const fbCode =
+    readProp(readProp(err, 'errorInfo'), 'code') ?? readProp(err, 'code');
   if (typeof fbCode === 'string' && PERMANENT_FIREBASE_CODES.has(fbCode)) {
     asUnrecoverable(err);
   }

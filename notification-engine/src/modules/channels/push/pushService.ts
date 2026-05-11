@@ -32,13 +32,12 @@ export class PushService implements IChannel {
       );
       return { success: true, messageId, timestamp: new Date() };
     } catch (err) {
-      const error = err as { code?: string; message: string };
-      this.logger.warn(`FCM rejected: ${error.code} ${error.message}`);
-      return {
-        success: false,
-        error: error.code ?? error.message,
-        timestamp: new Date(),
-      };
+      const error = err as { code?: string; message?: string };
+      this.logger.warn(
+        `FCM rejected: ${error.code ?? ''} ${error.message ?? ''}`,
+      );
+      // Re-throw the original error so the worker's classifier can read errorInfo.code / code.
+      throw err;
     }
   }
 }

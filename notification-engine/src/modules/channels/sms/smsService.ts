@@ -27,9 +27,10 @@ export class SmsService implements IChannel {
       });
       return { success: true, messageId: message.sid, timestamp: new Date() };
     } catch (err) {
-      const error = err as Error;
-      this.logger.warn(`Twilio rejected: ${error.message}`);
-      return { success: false, error: error.message, timestamp: new Date() };
+      const message = err instanceof Error ? err.message : String(err);
+      this.logger.warn(`Twilio rejected: ${message}`);
+      // Re-throw the original error so the worker's classifier can read Twilio's numeric `code`.
+      throw err;
     }
   }
 }

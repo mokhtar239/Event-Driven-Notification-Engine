@@ -12,8 +12,16 @@ const PERMANENT_TWILIO_CODES = new Set<number>([
   21614, // not a valid mobile number
 ]);
 
-export function throwClassifiedSms(err: any): never {
-  if (typeof err?.code === 'number' && PERMANENT_TWILIO_CODES.has(err.code)) {
+function readProp(obj: unknown, key: string): unknown {
+  if (obj && typeof obj === 'object' && key in obj) {
+    return (obj as Record<string, unknown>)[key];
+  }
+  return undefined;
+}
+
+export function throwClassifiedSms(err: unknown): never {
+  const code = readProp(err, 'code');
+  if (typeof code === 'number' && PERMANENT_TWILIO_CODES.has(code)) {
     asUnrecoverable(err);
   }
   const cls = classifyHttpAndNetwork(err);

@@ -13,15 +13,26 @@ const TRANSIENT_NET_CODES = new Set([
   'EPIPE',
 ]);
 
-export function classifyHttpAndNetwork(err: any): ErrorClass | 'unknown' {
+function readProp(obj: unknown, key: string): unknown {
+  if (obj && typeof obj === 'object' && key in obj) {
+    return (obj as Record<string, unknown>)[key];
+  }
+  return undefined;
+}
+
+export function classifyHttpAndNetwork(err: unknown): ErrorClass | 'unknown' {
   if (!err) return 'transient';
 
-  if (typeof err.code === 'string' && TRANSIENT_NET_CODES.has(err.code)) {
+  const code = readProp(err, 'code');
+  if (typeof code === 'string' && TRANSIENT_NET_CODES.has(code)) {
     return 'transient';
   }
 
-  const status: number | undefined =
-    err.statusCode ?? err.status ?? err.response?.status;
+  const status =
+    readProp(err, 'statusCode') ??
+    readProp(err, 'status') ??
+    readProp(readProp(err, 'response'), 'status');
+
   if (typeof status === 'number') {
     if (status === 408 || status === 429) return 'transient';
     if (status >= 500) return 'transient';
@@ -32,10 +43,13 @@ export function classifyHttpAndNetwork(err: any): ErrorClass | 'unknown' {
   return 'unknown';
 }
 
-export function asUnrecoverable(err: any): never {
-  throw new UnrecoverableError(err?.message ?? 'permanent channel error');
+export function asUnrecoverable(err: unknown): never {
+  const message = readProp(err, 'message');
+  throw new UnrecoverableError(
+    typeof message === 'string' ? message : 'permanent channel error',
+  );
 }
 
-export function rethrowTransient(err: any): never {
+export function rethrowTransient(err: unknown): never {
   throw err;
 }

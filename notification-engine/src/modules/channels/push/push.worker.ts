@@ -5,6 +5,7 @@ import { NotificationJobData } from '../../../common/interfaces/notification-job
 import { PushService } from './pushService';
 import { TemplateService } from '../../template/template.service';
 import { ChannelType } from '@common/enums/channel-type.enum';
+import { throwClassifiedPush } from './push.errors';
 
 @Processor('push')
 export class PushWorker extends WorkerHost {
@@ -25,12 +26,15 @@ export class PushWorker extends WorkerHost {
       ChannelType.PUSH,
       variables,
     );
-    const result = await this.push.send({
-      to: variables.token,
-      subject: subject ?? '',
-      body: body ?? '',
-    });
-    if (!result.success) throw new Error(result.error);
+    try {
+      await this.push.send({
+        to: variables.token,
+        subject: subject ?? '',
+        body: body ?? '',
+      });
+    } catch (err) {
+      throwClassifiedPush(err);
+    }
   }
 
   @OnWorkerEvent('completed')

@@ -5,6 +5,7 @@ import { Job } from 'bullmq';
 import { NotificationJobData } from '../../../common/interfaces/notification-job.interface';
 import { TemplateService } from '../../template/template.service';
 import { ChannelType } from '@common/enums/channel-type.enum';
+import { throwClassifiedEmail } from './email.errors';
 
 @Processor('email')
 export class EmailWorker extends WorkerHost {
@@ -28,11 +29,15 @@ export class EmailWorker extends WorkerHost {
       ChannelType.EMAIL,
       variables,
     );
-    await this.emailService.send({
-      to: variables.email,
-      subject: subject ?? '(no subject)',
-      body: body ?? '',
-    });
+    try {
+      await this.emailService.send({
+        to: variables.email,
+        subject: subject ?? '(no subject)',
+        body: body ?? '',
+      });
+    } catch (err) {
+      throwClassifiedEmail(err);
+    }
   }
 
   @OnWorkerEvent('completed')

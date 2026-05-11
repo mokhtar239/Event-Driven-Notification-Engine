@@ -20,10 +20,41 @@ import { TemplateModule } from '../template/template.module';
 @Module({
   imports: [
     BullModule.registerQueue(
-      { name: ChannelType.EMAIL },
-      { name: ChannelType.SMS },
-      { name: ChannelType.PUSH },
-      { name: ChannelType.INAPP },
+      {
+        name: ChannelType.EMAIL,
+        defaultJobOptions: {
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 2000 },
+          removeOnComplete: { count: 1000 },
+          removeOnFail: { count: 5000 },
+        },
+      },
+      {
+        name: ChannelType.SMS,
+        defaultJobOptions: {
+          attempts: 5,
+          backoff: { type: 'fixed', delay: 60_000 },
+          removeOnComplete: { count: 1000 },
+          removeOnFail: { count: 5000 },
+        },
+      },
+      {
+        name: ChannelType.PUSH,
+        defaultJobOptions: {
+          attempts: 3,
+          backoff: { type: 'exponential', delay: 2000 },
+          removeOnComplete: { count: 1000 },
+          removeOnFail: { count: 5000 },
+        },
+      },
+      {
+        name: ChannelType.INAPP,
+        defaultJobOptions: {
+          attempts: 1,
+          removeOnComplete: { count: 1000 },
+          removeOnFail: { count: 5000 },
+        },
+      },
     ),
     MongooseModule.forFeature([
       { name: InappNotification.name, schema: InappNotificationSchema },

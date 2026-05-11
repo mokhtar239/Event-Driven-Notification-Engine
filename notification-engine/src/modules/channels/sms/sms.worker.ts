@@ -2,7 +2,7 @@ import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { Logger } from '@nestjs/common';
 import { NotificationJobData } from '../../../common/interfaces/notification-job.interface';
-import { SmsService } from './smsService';
+import { SmsService } from './sms.service';
 import { TemplateService } from '../../template/template.service';
 import { ChannelType } from '@common/enums/channel-type.enum';
 import { throwClassifiedSms } from './sms.errors';

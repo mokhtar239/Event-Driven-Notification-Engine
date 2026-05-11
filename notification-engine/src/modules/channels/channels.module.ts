@@ -7,8 +7,8 @@ import { SmsWorker } from './sms/sms.worker';
 import { PushWorker } from './push/push.worker';
 import { InappWorker } from './inapp/inapp.worker';
 import { EmailService } from './email/emailService';
-import { SmsService } from './sms/smsService';
-import { PushService } from './push/pushService';
+import { SmsService } from './sms/sms.service';
+import { PushService } from './push/push.service';
 import { InappService } from './inapp/inapp.service';
 import { InappGateway } from './inapp/inapp.gateway';
 import {

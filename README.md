@@ -11,6 +11,18 @@
 
 ---
 
+## ✨ Highlights
+
+- 📡 Designed and built an event-driven multi-channel notification microservice on **NestJS + TypeScript**, ingesting domain events from **RabbitMQ** and dispatching across email, SMS, push, and in-app channels.
+- 🧩 Architected per-channel job queues over **BullMQ + Redis** for fault isolation, with per-channel retry policies and a dead-letter store for terminal failures.
+- 🧠 Built a **provider-error classifier** that maps HTTP, network, and provider-specific codes into transient vs permanent outcomes, short-circuiting retries on unrecoverable errors.
+- 📝 Implemented a **Handlebars template engine** with two-layer caching (Redis + in-memory) and SETNX-based stampede protection, plus an admin REST API for template CRUD, preview, and render.
+- 🗃️ Modeled the data layer in **MongoDB** (notifications, delivery logs, templates, preferences, dead letters, in-app inbox) with compound indexes and a status FSM for delivery tracking.
+- 🐳 Containerized the stack with **Docker Compose** (MongoDB, Redis, RabbitMQ) and split the realtime WebSocket gateway onto its own port for future extraction into a standalone service.
+
+
+---
+
 ## 🧱 Tech Stack
 
 | Layer | Choice |

@@ -2,7 +2,6 @@
 
 A production-grade, multi-channel notification microservice built with **NestJS + TypeScript**. Consumes domain events from RabbitMQ and dispatches notifications across **Email, SMS, Push, and In-App** channels with isolated per-channel job queues, classified retry policies, template rendering with Redis caching, and a dead-letter store for terminal failures.
 
-> Portfolio project targeting backend / SWE roles. Base version (~5–8k LOC) is being built first; the full 10/10 plan adds security hardening, multi-tenancy, k6 load testing, schema registry, Kubernetes/Helm/Terraform, and ADRs (~18–22k LOC total).
 
 ---
 

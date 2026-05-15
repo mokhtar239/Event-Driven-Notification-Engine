@@ -1,6 +1,6 @@
 # 📬 Event-Driven Notification Engine
 
-> 🚀 A production-grade, multi-channel notification microservice built with **NestJS + TypeScript**. Consumes domain events from RabbitMQ and dispatches notifications across **Email, SMS, Push, and In-App** channels with isolated per-channel job queues, classified retry policies, template rendering with Redis caching, and a dead-letter store for terminal failures.
+> 🚀 A production-grade, multi-channel notification microservice built with **NestJS + TypeScript**. Consumes domain events from RabbitMQ and dispatches notifications across **Email, SMS, Push, and In-App** channels with isolated per-channel job queues, classified retry policies, template rendering with Redis caching, and a dead-letter store for terminal failures .
 
 ![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=flat&logo=nestjs&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)

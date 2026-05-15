@@ -1,39 +1,45 @@
-# Event-Driven Notification Engine
+# 📬 Event-Driven Notification Engine
 
-A production-grade, multi-channel notification microservice built with **NestJS + TypeScript**. Consumes domain events from RabbitMQ and dispatches notifications across **Email, SMS, Push, and In-App** channels with isolated per-channel job queues, classified retry policies, template rendering with Redis caching, and a dead-letter store for terminal failures.
+> 🚀 A production-grade, multi-channel notification microservice built with **NestJS + TypeScript**. Consumes domain events from RabbitMQ and dispatches notifications across **Email, SMS, Push, and In-App** channels with isolated per-channel job queues, classified retry policies, template rendering with Redis caching, and a dead-letter store for terminal failures.
 
+![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=flat&logo=nestjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)
+![RabbitMQ](https://img.shields.io/badge/RabbitMQ-FF6600?style=flat&logo=rabbitmq&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat&logo=redis&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)
 
 ---
 
-## Tech Stack
+## 🧱 Tech Stack
 
 | Layer | Choice |
 |---|---|
-| Runtime | Node.js + TypeScript (strict mode) |
-| Framework | NestJS |
-| Message broker | RabbitMQ (topic exchange) |
-| Job queues | BullMQ + Redis |
-| Database | MongoDB + Mongoose |
-| Cache | Redis (`ioredis`) |
-| Email | Resend |
-| SMS | Twilio |
-| Push | Firebase Admin SDK |
-| In-App realtime | Socket.io |
-| Templating | Handlebars |
-| Containerization | Docker + docker-compose |
+| ⚙️ Runtime | Node.js + TypeScript (strict mode) |
+| 🐈 Framework | NestJS |
+| 🐇 Message broker | RabbitMQ (topic exchange) |
+| 📦 Job queues | BullMQ + Redis |
+| 🍃 Database | MongoDB + Mongoose |
+| ⚡ Cache | Redis (`ioredis`) |
+| 📧 Email | Resend |
+| 💬 SMS | Twilio |
+| 🔔 Push | Firebase Admin SDK |
+| 🛰️ In-App realtime | Socket.io |
+| 📝 Templating | Handlebars |
+| 🐳 Containerization | Docker + docker-compose |
 
 ---
 
-## Architecture
+## 🏗️ Architecture
 
 ```
 External Services (Order, Payment, Auth, Cron)
         │
         ▼
-   RabbitMQ (Topic Exchange)
+   🐇 RabbitMQ (Topic Exchange)
         │
         ▼
-   Notification Engine (NestJS)
+   🚀 Notification Engine (NestJS)
    ┌─────────────────────────────────────────────────┐
    │ Event Ingestion → Preference Check → Template   │
    │   Render → Channel Router → BullMQ Queues       │
@@ -42,82 +48,78 @@ External Services (Order, Payment, Auth, Cron)
    │ Retry (classified backoff) → Dead Letter store  │
    └──────┬──────────┬──────────┬─────────────────────┘
           │          │          │
-      MongoDB     Redis     External APIs
+       🍃 Mongo   ⚡ Redis   🌐 External APIs
                  (queues)   (Resend / Twilio / FCM)
 ```
 
-### Key design decisions
-- **Per-channel BullMQ queues** for fault isolation — if Resend is down, SMS and push keep flowing.
-- **`IChannel` interface** — every channel implements `send(payload): Promise<DeliveryResult>`.
-- **Provider error classification** — HTTP / network / provider codes mapped to `transient` vs `permanent`. Permanent errors raise BullMQ `UnrecoverableError` to skip remaining retries and go straight to the dead-letter store.
-- **Per-channel retry policy** — email 3× exponential, SMS 5× fixed 60 s, push 3× exponential, in-app 1 (no retry).
-- **Two-layer template cache** — Redis caches the rendered template document strings (cross-process); an in-memory `Map` caches compiled Handlebars functions per-process (closures can't serialize to Redis).
-- **Persist-then-emit for in-app** — every in-app notification is written to MongoDB first, then best-effort emitted via Socket.io. Offline users still receive their messages once the Notification Center API is added.
-- **WebSocket on a separate port (3001)** instead of attaching to the main HTTP server — sets up a clean future split into a standalone realtime service.
+### 🎯 Key design decisions
+- 🧩 **Per-channel BullMQ queues** for fault isolation — if Resend is down, SMS and push keep flowing.
+- 🔌 **`IChannel` interface** — every channel implements `send(payload): Promise<DeliveryResult>`.
+- 🧠 **Provider error classification** — HTTP / network / provider codes mapped to `transient` vs `permanent`. Permanent errors raise BullMQ `UnrecoverableError` to skip remaining retries and go straight to the dead-letter store.
+- 🔁 **Per-channel retry policy** — email 3× exponential, SMS 5× fixed 60 s, push 3× exponential, in-app 1 (no retry).
+- 🗂️ **Two-layer template cache** — Redis caches the rendered template document strings (cross-process); an in-memory `Map` caches compiled Handlebars functions per-process (closures can't serialize to Redis).
+- 💾 **Persist-then-emit for in-app** — every in-app notification is written to MongoDB first, then best-effort emitted via Socket.io. Offline users still receive their messages once the Notification Center API is added.
+- 🛰️ **WebSocket on a separate port (3001)** instead of attaching to the main HTTP server — sets up a clean future split into a standalone realtime service.
 
 ---
 
-
-
----
-
-## Data Model
+## 🗃️ Data Model
 
 | Collection | Purpose |
 |---|---|
-| `notifications` | Per-event record + overall status FSM (pending → sent / partial / failed) |
-| `delivery_logs` | One row per channel send attempt (queued / delivered / failed / dlq) |
-| `templates` | Tenant-scoped, versioned, per-channel Handlebars templates |
-| `user_preferences` | Channel opt-in/out, quiet hours, digest mode, muted events |
-| `dead_letters` | Terminal failures awaiting admin replay/discard |
-| `inapp_notifications` | Persistent in-app inbox for offline delivery |
+| 📨 `notifications` | Per-event record + overall status FSM (pending → sent / partial / failed) |
+| 📜 `delivery_logs` | One row per channel send attempt (queued / delivered / failed / dlq) |
+| 📝 `templates` | Tenant-scoped, versioned, per-channel Handlebars templates |
+| ⚙️ `user_preferences` | Channel opt-in/out, quiet hours, digest mode, muted events |
+| ☠️ `dead_letters` | Terminal failures awaiting admin replay/discard |
+| 🔔 `inapp_notifications` | Persistent in-app inbox for offline delivery |
 
 ---
 
-## Event Routing Table
+## 🗺️ Event Routing Table
 
 | Event | Channels | Priority |
 |---|---|---|
-| `user.signup` | Email + In-App | Normal |
-| `order.placed` | Email + SMS + In-App | Normal |
-| `order.shipped` | SMS + Push | Normal |
-| `payment.failed` | Email + SMS | High (bypasses quiet hours) |
-| `friend.request` | In-App | Low |
-| `weekly.digest` | Email (batched) | Low (cron) |
+| 👤 `user.signup` | Email + In-App | Normal |
+| 🛒 `order.placed` | Email + SMS + In-App | Normal |
+| 📦 `order.shipped` | SMS + Push | Normal |
+| 💳 `payment.failed` | Email + SMS | 🔥 High (bypasses quiet hours) |
+| 🤝 `friend.request` | In-App | Low |
+| 📰 `weekly.digest` | Email (batched) | Low (cron) |
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 notification-engine/
-├── docker-compose.yml                # MongoDB, Redis, RabbitMQ
-├── src/
+├── 🐳 docker-compose.yml             # MongoDB, Redis, RabbitMQ
+├── 📂 src/
 │   ├── app.module.ts
 │   ├── main.ts
-│   ├── config/                       # database, redis, rabbitmq, channels
-│   ├── common/
+│   ├── ⚙️ config/                    # database, redis, rabbitmq, channels
+│   ├── 🧰 common/
 │   │   ├── enums/                    # ChannelType, DeliveryStatus, DeadLetterStatus, FailType
 │   │   ├── interfaces/               # IChannel, DeliveryResult, NotificationJobData
 │   │   └── errors/classify-error.ts  # Transient vs permanent classifier
-│   ├── modules/
+│   ├── 📦 modules/
 │   │   ├── event-ingestion/          # RabbitMQ consumer + router
 │   │   ├── template/                 # Service, renderer, controller, schemas
 │   │   ├── channels/                 # email | sms | push | inapp workers + services
 │   │   └── delivery/                 # dead-letter schema (DLQ in progress)
-│   └── seeds/                        # Default templates
-└── test/                             # Reserved for Phase 10
+│   └── 🌱 seeds/                     # Default templates
+└── 🧪 test/                          # Reserved for Phase 10
 ```
 
 ---
 
-## Running Locally
+## 🏃 Running Locally
 
-### Prerequisites
+### ✅ Prerequisites
 - Node.js ≥ 18
 - Docker + docker-compose
 
-### Quick start
+### ⚡ Quick start
 ```bash
 # 1. Start infrastructure
 docker-compose up -d mongodb redis rabbitmq
@@ -130,9 +132,9 @@ npm run seed
 npm run start:dev
 ```
 
-The HTTP API listens on **`http://localhost:3000/api/v1`**. The WebSocket gateway listens separately on **`localhost:3001`**.
+🌐 The HTTP API listens on **`http://localhost:3000/api/v1`**. The WebSocket gateway listens separately on **`localhost:3001`**.
 
-### Environment variables (see `.env.example`)
+### 🔐 Environment variables (see `.env.example`)
 ```
 MONGODB_URI=
 REDIS_HOST= REDIS_PORT=
@@ -145,7 +147,7 @@ PUSH_DRY_RUN=true
 
 ---
 
-## Roadmap
+## 🛣️ Roadmap
 
 | Phase | Step | Status |
 |---|---|---|
@@ -173,8 +175,10 @@ PUSH_DRY_RUN=true
 | 22 | Kubernetes + Helm + Terraform | ⏳ |
 | 23 | ADRs + system design doc | ⏳ |
 
+✅ Done &nbsp;•&nbsp; 🔄 In progress &nbsp;•&nbsp; ⏳ Planned
+
 ---
 
-## License
+## 📜 License
 
 MIT

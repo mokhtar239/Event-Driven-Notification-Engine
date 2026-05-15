@@ -1,110 +1,184 @@
-<h1 align="center">Hi there, I'm Mohamed 👋</h1>
+# 📬 Event-Driven Notification Engine
 
-<p align="center">
-  <b>Backend Engineer • Competitive Programmer • CS Student @ Cairo University</b>
-</p>
+> 🚀 A production-grade, multi-channel notification microservice built with **NestJS + TypeScript**. Consumes domain events from RabbitMQ and dispatches notifications across **Email, SMS, Push, and In-App** channels with isolated per-channel job queues, classified retry policies, template rendering with Redis caching, and a dead-letter store for terminal failures .
 
-<p align="center">
-  <a href="https://leetcode.com/u/mohamed_mokhtar_ibrahem/"><img src="https://img.shields.io/badge/LeetCode-FFA116?style=for-the-badge&logo=leetcode&logoColor=black"/></a>
-  <a href="https://codeforces.com/profile/Mohamed.Mokhtar"><img src="https://img.shields.io/badge/Codeforces-1F8ACB?style=for-the-badge&logo=codeforces&logoColor=white"/></a>
-  <a href="https://www.linkedin.com/in/mohamed-mokhtar-17a101261/"><img src="https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white"/></a>
-  <a href="https://mail.google.com/mail/?view=cm&fs=1&to=mo.mokhtar.ibrahem@gmail.com"><img src="https://img.shields.io/badge/Email-D14836?style=for-the-badge&logo=gmail&logoColor=white"/></a>
-</p>
+![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=flat&logo=nestjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat&logo=typescript&logoColor=white)
+![RabbitMQ](https://img.shields.io/badge/RabbitMQ-FF6600?style=flat&logo=rabbitmq&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-DC382D?style=flat&logo=redis&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=flat&logo=mongodb&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=flat&logo=docker&logoColor=white)
 
 ---
 
-### 🚀 About Me
+## 🧱 Tech Stack
 
-- 🎓 3rd-year Computer Science student at **FCAI, Cairo University**
-- 🛠️ Building production-grade backend systems with **NestJS**, **Node.js**, and **microservices**
-- 🏆 **Competitive Programmer** — solved **1500+ problems** across platforms
-- 📚 Strong foundation in **Data Structures, Algorithms, OOP, and Design Patterns**
-- 📡 Currently working on an **Event-Driven Notification Engine** (RabbitMQ, Redis, BullMQ)
-- 🎯 Targeting **remote backend / software engineering** roles
-
----
-
-### 🏆 Competitive Programming
-
-<table>
-  <tr>
-    <td align="center"><b>🟧 LeetCode</b></td>
-    <td><b>Guardian</b> — Top 1% Worldwide • Rating <b>2135</b></td>
-    <td><a href="https://leetcode.com/u/mohamed_mokhtar_ibrahem/">@mohamed_mokhtar_ibrahem</a></td>
-  </tr>
-  <tr>
-    <td align="center"><b>🟦 Codeforces</b></td>
-    <td><b>Specialist</b> — Rating <b>1400+</b></td>
-    <td><a href="https://codeforces.com/profile/Mohamed.Mokhtar">@Mohamed.Mokhtar</a></td>
-  </tr>
-  <tr>
-    <td align="center"><b>📊 Total</b></td>
-    <td colspan="2"><b>1500+ problems solved</b></td>
-  </tr>
-</table>
+| Layer | Choice |
+|---|---|
+| ⚙️ Runtime | Node.js + TypeScript (strict mode) |
+| 🐈 Framework | NestJS |
+| 🐇 Message broker | RabbitMQ (topic exchange) |
+| 📦 Job queues | BullMQ + Redis |
+| 🍃 Database | MongoDB + Mongoose |
+| ⚡ Cache | Redis (`ioredis`) |
+| 📧 Email | Resend |
+| 💬 SMS | Twilio |
+| 🔔 Push | Firebase Admin SDK |
+| 🛰️ In-App realtime | Socket.io |
+| 📝 Templating | Handlebars |
+| 🐳 Containerization | Docker + docker-compose |
 
 ---
 
-### 📌 Featured Project
+## 🏗️ Architecture
 
-#### 🔔 [Event-Driven Notification Engine](https://github.com/mokhtar239/Event-Driven-Notification-Engine)
+```
+External Services (Order, Payment, Auth, Cron)
+        │
+        ▼
+   🐇 RabbitMQ (Topic Exchange)
+        │
+        ▼
+   🚀 Notification Engine (NestJS)
+   ┌─────────────────────────────────────────────────┐
+   │ Event Ingestion → Preference Check → Template   │
+   │   Render → Channel Router → BullMQ Queues       │
+   │   (per channel) → Workers → Deliver             │
+   │                                                  │
+   │ Retry (classified backoff) → Dead Letter store  │
+   └──────┬──────────┬──────────┬─────────────────────┘
+          │          │          │
+       🍃 Mongo   ⚡ Redis   🌐 External APIs
+                 (queues)   (Resend / Twilio / FCM)
+```
 
-> A production-grade multi-channel notification microservice built with NestJS + TypeScript, RabbitMQ, Redis, BullMQ, and MongoDB.
-
-- ⚡ **Event-driven architecture** — ingests domain events from RabbitMQ and dispatches across **email, SMS, push, and in-app** channels.
-- 🧵 **Per-channel job queues** over BullMQ + Redis for fault isolation, with per-channel retry policies and a **dead-letter store** for terminal failures.
-- 🧠 **Provider-error classifier** that maps HTTP, network, and provider-specific codes into **transient vs permanent** outcomes, short-circuiting retries on unrecoverable errors.
-- 🎨 **Handlebars template engine** with **two-layer caching** (Redis + in-memory) and **SETNX-based stampede protection**, plus an admin REST API for template CRUD, preview, and render.
-- 🗄️ **MongoDB data layer** modeling notifications, delivery logs, templates, preferences, dead letters, and in-app inbox — with compound indexes and a **status FSM** for delivery tracking.
-- 🐳 **Containerized** with Docker Compose (MongoDB, Redis, RabbitMQ) and split the **realtime WebSocket gateway** onto its own port for future extraction into a standalone service.
-
-**Stack:** `NestJS` `TypeScript` `RabbitMQ` `Redis` `BullMQ` `MongoDB` `Socket.io` `Docker`
-
----
-
-### 🧰 Tech Stack
-
-**Languages**
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
-![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
-![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![C++](https://img.shields.io/badge/C++-00599C?style=for-the-badge&logo=c%2B%2B&logoColor=white)
-
-**Backend**
-![NestJS](https://img.shields.io/badge/NestJS-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)
-![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white)
-![Express](https://img.shields.io/badge/Express-000000?style=for-the-badge&logo=express&logoColor=white)
-![Socket.io](https://img.shields.io/badge/Socket.io-010101?style=for-the-badge&logo=socket.io&logoColor=white)
-
-**Frontend**
-![HTML5](https://img.shields.io/badge/HTML5-E34F26?style=for-the-badge&logo=html5&logoColor=white)
-![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
-![Bootstrap](https://img.shields.io/badge/Bootstrap-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white)
-![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
-
-**Databases & Messaging**
-![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
-![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
-![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
-![RabbitMQ](https://img.shields.io/badge/RabbitMQ-FF6600?style=for-the-badge&logo=rabbitmq&logoColor=white)
-
-**DevOps & Tools**
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-![Kubernetes](https://img.shields.io/badge/Kubernetes-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white)
-![AWS](https://img.shields.io/badge/AWS-232F3E?style=for-the-badge&logo=amazon-aws&logoColor=white)
-![Terraform](https://img.shields.io/badge/Terraform-7B42BC?style=for-the-badge&logo=terraform&logoColor=white)
-![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=github-actions&logoColor=white)
-![Prometheus](https://img.shields.io/badge/Prometheus-E6522C?style=for-the-badge&logo=prometheus&logoColor=white)
-![Git](https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white)
-
-**Core CS**
-![DSA](https://img.shields.io/badge/Data_Structures_&_Algorithms-FF6B6B?style=for-the-badge)
-![OOP](https://img.shields.io/badge/OOP-4ECDC4?style=for-the-badge)
-![Design Patterns](https://img.shields.io/badge/Design_Patterns-8E44AD?style=for-the-badge)
-![Event-Driven](https://img.shields.io/badge/Event--Driven_Architecture-F39C12?style=for-the-badge)
+### 🎯 Key design decisions
+- 🧩 **Per-channel BullMQ queues** for fault isolation — if Resend is down, SMS and push keep flowing.
+- 🔌 **`IChannel` interface** — every channel implements `send(payload): Promise<DeliveryResult>`.
+- 🧠 **Provider error classification** — HTTP / network / provider codes mapped to `transient` vs `permanent`. Permanent errors raise BullMQ `UnrecoverableError` to skip remaining retries and go straight to the dead-letter store.
+- 🔁 **Per-channel retry policy** — email 3× exponential, SMS 5× fixed 60 s, push 3× exponential, in-app 1 (no retry).
+- 🗂️ **Two-layer template cache** — Redis caches the rendered template document strings (cross-process); an in-memory `Map` caches compiled Handlebars functions per-process (closures can't serialize to Redis).
+- 💾 **Persist-then-emit for in-app** — every in-app notification is written to MongoDB first, then best-effort emitted via Socket.io. Offline users still receive their messages once the Notification Center API is added.
+- 🛰️ **WebSocket on a separate port (3001)** instead of attaching to the main HTTP server — sets up a clean future split into a standalone realtime service.
 
 ---
 
-<p align="center">
-  <i>"First, solve the problem. Then, write the code."</i>
-</p>
+## 🗃️ Data Model
+
+| Collection | Purpose |
+|---|---|
+| 📨 `notifications` | Per-event record + overall status FSM (pending → sent / partial / failed) |
+| 📜 `delivery_logs` | One row per channel send attempt (queued / delivered / failed / dlq) |
+| 📝 `templates` | Tenant-scoped, versioned, per-channel Handlebars templates |
+| ⚙️ `user_preferences` | Channel opt-in/out, quiet hours, digest mode, muted events |
+| ☠️ `dead_letters` | Terminal failures awaiting admin replay/discard |
+| 🔔 `inapp_notifications` | Persistent in-app inbox for offline delivery |
+
+---
+
+## 🗺️ Event Routing Table
+
+| Event | Channels | Priority |
+|---|---|---|
+| 👤 `user.signup` | Email + In-App | Normal |
+| 🛒 `order.placed` | Email + SMS + In-App | Normal |
+| 📦 `order.shipped` | SMS + Push | Normal |
+| 💳 `payment.failed` | Email + SMS | 🔥 High (bypasses quiet hours) |
+| 🤝 `friend.request` | In-App | Low |
+| 📰 `weekly.digest` | Email (batched) | Low (cron) |
+
+---
+
+## 📁 Project Structure
+
+```
+notification-engine/
+├── 🐳 docker-compose.yml             # MongoDB, Redis, RabbitMQ
+├── 📂 src/
+│   ├── app.module.ts
+│   ├── main.ts
+│   ├── ⚙️ config/                    # database, redis, rabbitmq, channels
+│   ├── 🧰 common/
+│   │   ├── enums/                    # ChannelType, DeliveryStatus, DeadLetterStatus, FailType
+│   │   ├── interfaces/               # IChannel, DeliveryResult, NotificationJobData
+│   │   └── errors/classify-error.ts  # Transient vs permanent classifier
+│   ├── 📦 modules/
+│   │   ├── event-ingestion/          # RabbitMQ consumer + router
+│   │   ├── template/                 # Service, renderer, controller, schemas
+│   │   ├── channels/                 # email | sms | push | inapp workers + services
+│   │   └── delivery/                 # dead-letter schema (DLQ in progress)
+│   └── 🌱 seeds/                     # Default templates
+└── 🧪 test/                          # Reserved for Phase 10
+```
+
+---
+
+## 🏃 Running Locally
+
+### ✅ Prerequisites
+- Node.js ≥ 18
+- Docker + docker-compose
+
+### ⚡ Quick start
+```bash
+# 1. Start infrastructure
+docker-compose up -d mongodb redis rabbitmq
+
+# 2. Install + seed templates
+npm install
+npm run seed
+
+# 3. Run the API
+npm run start:dev
+```
+
+🌐 The HTTP API listens on **`http://localhost:3000/api/v1`**. The WebSocket gateway listens separately on **`localhost:3001`**.
+
+### 🔐 Environment variables (see `.env.example`)
+```
+MONGODB_URI=
+REDIS_HOST= REDIS_PORT=
+RABBITMQ_URL=
+RESEND_API_KEY=
+TWILIO_ACCOUNT_SID= TWILIO_AUTH_TOKEN= TWILIO_FROM=
+FIREBASE_PROJECT_ID= FIREBASE_CLIENT_EMAIL= FIREBASE_PRIVATE_KEY=
+PUSH_DRY_RUN=true
+```
+
+---
+
+## 🛣️ Roadmap
+
+| Phase | Step | Status |
+|---|---|---|
+| 1 | NestJS + TypeScript foundation | ✅ |
+| 2 | MongoDB + Mongoose schemas | ✅ |
+| 3 | RabbitMQ ingestion | ✅ |
+| 4 | Event validation & routing | ✅ |
+| 5 | BullMQ per-channel queues | ✅ |
+| 6 | Channel workers (Email / SMS / Push / In-App) | ✅ |
+| 7 | Template engine + Redis caching | ✅ |
+| 8 | Retry + classified errors + DLQ + circuit breaker | 🔄 |
+| 9 | User preferences (opt-in/out, quiet hours) | ⏳ |
+| 10 | Preference-based routing pipeline | ⏳ |
+| 11 | Delivery tracking + status FSM | ⏳ |
+| 12 | Analytics + SSE dashboard | ⏳ |
+| 13 | Digest batching + distributed cron | ⏳ |
+| 14 | Docker, Swagger, structured logging | ⏳ |
+| 15 | Comprehensive test suite (Jest + e2e) | ⏳ |
+| 16 | CI/CD with GitHub Actions | ⏳ |
+| 17 | Auth, HMAC verification, rate limiting | ⏳ |
+| 18 | Field-level encryption + GDPR | ⏳ |
+| 19 | Multi-tenancy with row-level isolation | ⏳ |
+| 20 | k6 load testing | ⏳ |
+| 21 | Schema registry + contract testing | ⏳ |
+| 22 | Kubernetes + Helm + Terraform | ⏳ |
+| 23 | ADRs + system design doc | ⏳ |
+
+✅ Done &nbsp;•&nbsp; 🔄 In progress &nbsp;•&nbsp; ⏳ Planned
+
+---
+
+## 📜 License
+
+MIT

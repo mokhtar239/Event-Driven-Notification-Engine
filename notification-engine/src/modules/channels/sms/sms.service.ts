@@ -5,17 +5,16 @@ import { DeliveryResult } from '@common/interfaces/delivery-result.interface';
 import { makeBreaker } from '@common/resilience/circuit-breaker';
 
 /**
- * Simulated email channel. Mimics the shape of the Resend client without making
- * real network calls. Failures throw errors carrying `statusCode` so that
- * `throwClassifiedEmail` (generic HTTP classifier) can distinguish permanent
- * vs. transient.
+ * Simulated SMS channel. Mimics the shape of a Twilio client without making
+ * real network calls. Failures throw errors carrying a numeric `code` so that
+ * `throwClassifiedSms` can distinguish permanent vs. transient.
  *
  * The external call is wrapped in an opossum circuit breaker so a sustained
  * provider outage fast-fails instead of hammering the provider.
  */
 @Injectable()
-export class EmailService implements IChannel {
-  private readonly logger = new Logger(EmailService.name);
+export class SmsService implements IChannel {
+  private readonly logger = new Logger(SmsService.name);
 
   // ~3% simulated transient failure rate.
   private readonly failureRate = 0.03;
@@ -24,16 +23,16 @@ export class EmailService implements IChannel {
 
   constructor() {
     this.breaker = makeBreaker((p: ChannelPayload) => this.doSend(p), {
-      name: 'email',
+      name: 'sms',
     });
     this.breaker.on('open', () =>
-      this.logger.warn('[BREAKER] email circuit OPEN — fast-failing'),
+      this.logger.warn('[BREAKER] sms circuit OPEN — fast-failing'),
     );
     this.breaker.on('halfOpen', () =>
-      this.logger.log('[BREAKER] email circuit HALF-OPEN — probing'),
+      this.logger.log('[BREAKER] sms circuit HALF-OPEN — probing'),
     );
     this.breaker.on('close', () =>
-      this.logger.log('[BREAKER] email circuit CLOSED — recovered'),
+      this.logger.log('[BREAKER] sms circuit CLOSED — recovered'),
     );
   }
 
@@ -44,38 +43,34 @@ export class EmailService implements IChannel {
   private async doSend(payload: ChannelPayload): Promise<DeliveryResult> {
     await this.simulateLatency();
 
-    if (!payload.to || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(payload.to)) {
-      // Permanent: invalid recipient (Resend returns 422).
-      throw Object.assign(new Error(`Invalid 'to' address: ${payload.to}`), {
-        name: 'validation_error',
-        statusCode: 422,
+    if (!payload.to || !/^\+?[1-9]\d{6,14}$/.test(payload.to)) {
+      // Permanent: invalid 'To' number (Twilio code 21211).
+      throw Object.assign(new Error(`Invalid 'To' number: ${payload.to}`), {
+        code: 21211,
       });
     }
 
     if (Math.random() < this.failureRate) {
       // Transient: simulate a 503 from the provider.
-      throw Object.assign(new Error('Email provider temporarily unavailable'), {
-        name: 'application_error',
+      throw Object.assign(new Error('SMS provider temporarily unavailable'), {
         statusCode: 503,
       });
     }
 
-    const messageId = this.randomUuid();
-    this.logger.log(`[SIMULATED] Email sent to=${payload.to} id=${messageId}`);
+    const messageId = `SM${this.randomHex(32)}`;
+    this.logger.log(`[SIMULATED] SMS sent to=${payload.to} sid=${messageId}`);
 
     return { success: true, messageId, timestamp: new Date() };
   }
 
   private simulateLatency(): Promise<void> {
-    const ms = 50 + Math.floor(Math.random() * 100);
+    const ms = 40 + Math.floor(Math.random() * 80);
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  private randomUuid(): string {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      const r = (Math.random() * 16) | 0;
-      const v = c === 'x' ? r : (r & 0x3) | 0x8;
-      return v.toString(16);
-    });
+  private randomHex(len: number): string {
+    let out = '';
+    while (out.length < len) out += Math.random().toString(16).slice(2);
+    return out.slice(0, len);
   }
 }

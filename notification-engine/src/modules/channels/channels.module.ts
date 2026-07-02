@@ -16,6 +16,7 @@ import {
   InappNotificationSchema,
 } from './inapp/schemas/inapp-notification.schema';
 import { TemplateModule } from '../template/template.module';
+import { DeliveryModule } from '../delivery/delivery.module';
 
 @Module({
   imports: [
@@ -60,6 +61,7 @@ import { TemplateModule } from '../template/template.module';
       { name: InappNotification.name, schema: InappNotificationSchema },
     ]),
     TemplateModule,
+    DeliveryModule,
   ],
   providers: [
     EmailWorker,

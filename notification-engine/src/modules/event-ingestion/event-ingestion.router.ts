@@ -1,4 +1,3 @@
-import { Notification } from './../delivery/schemas/notification.schema';
 import { Injectable } from '@nestjs/common';
 import { ChannelType } from '../../common/enums/channel-type.enum';
 import { EventPriority } from '../../common/enums/event-priority.enum';
@@ -6,7 +5,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { randomUUID } from 'crypto';
 import { NotificationEventDto } from '../../common/dto/notification-event.dto';
-interface RouteRule {
+export interface RouteRule {
   channels: ChannelType[];
   priority: EventPriority;
 }
@@ -46,7 +45,7 @@ export class EventRouter {
     @InjectQueue('push') private pushQueue: Queue,
     @InjectQueue('inapp') private inappQueue: Queue,
   ) {}
-  resolve(eventType: string): RouteRule {
+  resolve(eventType: string): RouteRule | null {
     return ROUTING_TABLE[eventType] ?? null;
   }
   private pickUpQueue(channel: ChannelType): Queue {
@@ -56,26 +55,31 @@ export class EventRouter {
     else if (channel === ChannelType.INAPP) return this.inappQueue;
     throw new Error(`No queue for this channel`);
   }
+  /**
+   * Dispatches one job per channel. `channels` is the preference-filtered list
+   * from the PreferenceRouter — NOT the raw routing table — so opted-out and
+   * quiet-hours-suppressed channels never reach a queue.
+   */
   async dispatch(
     event: NotificationEventDto,
-    NotificationId: string,
+    notificationId: string,
+    channels: ChannelType[],
+    priority: EventPriority,
   ): Promise<void> {
-    const route = this.resolve(event.eventType);
-    if (!route) return;
-    for (const channel of route.channels) {
+    for (const channel of channels) {
       const job = {
-        NotificationId,
+        NotificationId: notificationId,
         userId: event.userId,
         tenantId: event.tenantId,
         channel,
         event: event.eventType,
         templateId: event.eventType,
-        priority: route.priority,
+        priority,
         metadata: { correlationId: event.correlationId ?? randomUUID() },
         variables: event.data ?? {},
       };
       await this.pickUpQueue(channel).add('send', job, {
-        priority: route.priority,
+        priority,
       });
     }
   }

@@ -9,10 +9,16 @@ import { EventIngestionService } from './event-ingestion.service';
 import { EventRouter } from './event-ingestion.router';
 import { DublicateGuardService } from './DublicateGuardService';
 import { ChannelsModule } from '@modules/channels/channels.module';
+import { DeliveryModule } from '@modules/delivery/delivery.module';
+import { PreferencesModule } from '@modules/preferences/preferences.module';
+import { DigestModule } from '@modules/digest/digest.module';
 
 @Module({
   imports: [
     ChannelsModule,
+    DeliveryModule,
+    PreferencesModule,
+    DigestModule,
     RabbitMQModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

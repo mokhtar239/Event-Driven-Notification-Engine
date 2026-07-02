@@ -1,98 +1,250 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Event-Driven Notification Engine
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A production-grade, multi-tenant, event-driven notification microservice built with **NestJS + TypeScript**. It consumes domain events (via RabbitMQ or REST), applies per-user delivery preferences, renders templates, and delivers multi-channel notifications (email, SMS, push, in-app) with retry logic, dead-letter queues, digest batching, delivery tracking, and analytics.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Features
 
-## Description
+- **Event ingestion** — RabbitMQ topic consumer + REST endpoint, with event-level idempotency (Redis `SET NX`).
+- **Preference-based routing** — per-user channel opt-out, quiet hours (timezone-aware), muted events (wildcards), and priority override (HIGH/CRITICAL bypasses quiet hours).
+- **Per-channel queues** — isolated BullMQ queues (email, SMS, push, in-app) for fault isolation, each with its own retry policy.
+- **Retry, error classification, and DLQ** — transient vs permanent error classification, exponential/fixed backoff, opossum circuit breaker, and a dead-letter queue with replay/discard admin API.
+- **Template engine** — Handlebars templates with Redis caching and per-tenant/per-channel versioning.
+- **Delivery tracking** — every attempt logged, parent notification status rolled up (SENT / PARTIAL / FAILED), send-level idempotency guard.
+- **Analytics** — per-channel delivery rate, failure rate, and average delivery time; exposed via REST + an SSE live stream.
+- **Digest batching** — hourly/daily email digests with a Redis `SET NX` distributed lock so only one instance runs the cron in a multi-instance deployment.
+- **Multi-tenancy** — `tenantId` on every document for row-level isolation.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Architecture
 
-## Project setup
+```mermaid
+flowchart TD
+    tenant["Tenant A<br/>(publisher)"]
 
-```bash
-$ npm install
+    tenant -->|fire notification event| queue["RabbitMQ queue"]
+    tenant -->|fire notification event| endpoint["REST endpoint<br/>POST /events"]
+
+    queue --> consumer["RabbitMQ consumer"]
+    endpoint --> ingest["Event ingestion service"]
+    consumer --> ingest
+
+    ingest -->|dedup check| guard["Duplicate guard"]
+    guard -->|SET NX, 24h TTL| redis["Redis cache"]
+
+    ingest --> router["Event router"]
+    router -->|check preferences| prefs["User preferences"]
+
+    router --> emailQ["email queue"]
+    router --> smsQ["sms queue"]
+    router --> pushQ["push queue"]
+    router --> inappQ["in-app queue"]
+
+    emailQ --> emailW["email worker"]
+    smsQ --> smsW["sms worker"]
+    pushQ --> pushW["push worker"]
+    inappQ --> inappW["in-app worker"]
+
+    emailW -->|idempotency check| db["MongoDB<br/>(delivery logs)"]
+    smsW --> db
+    pushW --> db
+    inappW --> db
+
+    emailW -->|asks for template| tpl["Template engine"]
+    smsW --> tpl
+    pushW --> tpl
+    inappW --> tpl
+
+    tenant -->|add template for an event| tplEndpoint["Template endpoint"]
+    tplEndpoint --> tpl
+
+    tenant -->|edit preferences for a user| prefsEndpoint["Preferences endpoint"]
+    prefsEndpoint --> prefs
 ```
 
-## Compile and run the project
+**Flow:** a tenant fires an event (RabbitMQ or REST) → the ingestion service dedups it via a Redis guard → the router checks the user's preferences and fans the event out to one isolated BullMQ queue per surviving channel → each channel's worker checks the DB for prior delivery (idempotency), renders the template, and delivers. Templates and preferences are managed through their own admin endpoints.
 
-```bash
-# development
-$ npm run start
+## Data Model
 
-# watch mode
-$ npm run start:dev
+MongoDB collections (each has `_id`, `createdAt`, `updatedAt`). Relationships are application-level — MongoDB does not enforce foreign keys.
 
-# production mode
-$ npm run start:prod
+```mermaid
+erDiagram
+    notifications ||--o{ delivery_logs : "has (notificationId)"
+    notifications ||--o{ dead_letters : "fails into (notificationId)"
+    user_preferences ||--o{ notifications : "controls (userId+tenantId)"
+    templates ||--o{ notifications : "renders (eventType+channel+tenantId)"
+    notifications ||--o{ inapp_notifications : "feeds (userId)"
+
+    notifications {
+        ObjectId _id PK
+        string eventType
+        string userId
+        string tenantId
+        object data
+        array channels
+        string status
+        int priority
+        string correlationId
+    }
+    delivery_logs {
+        ObjectId _id PK
+        ObjectId notificationId FK
+        string tenantId
+        string channel
+        string status
+        int attempts
+        string lastError
+        string externalMessageId
+        date deliveredAt
+    }
+    dead_letters {
+        ObjectId _id PK
+        ObjectId notificationId FK
+        string tenantId
+        string channel
+        object payload
+        string error
+        int attempts
+        boolean replayed
+    }
+    templates {
+        ObjectId _id PK
+        string eventType
+        string channel
+        string tenantId
+        string subject
+        string body
+        boolean isActive
+        int version
+    }
+    user_preferences {
+        ObjectId _id PK
+        string userId
+        string tenantId
+        object channels
+        object quietHours
+        string digestMode
+        array mutedEvents
+    }
+    inapp_notifications {
+        ObjectId _id PK
+        string userId
+        string subject
+        string body
+        boolean read
+    }
 ```
 
-## Run tests
+| Collection | Purpose |
+|------------|---------|
+| `notifications` | Parent record per ingested event; fans out to one `delivery_logs` row per channel. |
+| `delivery_logs` | Per-`(notification, channel)` attempt tracking and outcome. |
+| `dead_letters` | Jobs that exhausted retries (or hit a permanent error), with full replayable payload. |
+| `templates` | Per-tenant, per-channel, versioned Handlebars templates. |
+| `user_preferences` | Per-user channels, quiet hours, digest mode, muted events. |
+| `inapp_notifications` | Stored in-app messages (read/unread feed). |
+
+**Enums**
+
+- **ChannelType:** `EMAIL`, `SMS`, `PUSH`, `INAPP`
+- **DeliveryStatus** (per channel): `QUEUED`, `PROCESSING`, `DELIVERED`, `FAILED`, `DLQ`
+- **NotificationStatus** (parent): `PENDING`, `PROCESSING`, `SENT`, `PARTIAL`, `FAILED`, `SUPPRESSED`
+- **EventPriority:** `CRITICAL=1`, `HIGH=2`, `NORMAL=3`, `LOW=4`
+- **DigestMode:** `instant`, `hourly`, `daily`
+
+Full details in [`docs/DB_SCHEMA.md`](docs/DB_SCHEMA.md).
+
+## Event Routing
+
+| Event | Channels | Priority |
+|-------|----------|----------|
+| `user.signup` | Email + In-App | Normal |
+| `order.placed` | Email + SMS + In-App | Normal |
+| `order.shipped` | SMS + Push | Normal |
+| `payment.failed` | Email + SMS | High (bypasses quiet hours) |
+| `friend.request` | In-App | Low |
+| `weekly.digest` | Email (batched) | Low |
+
+## Tech Stack
+
+| Concern | Technology |
+|---------|------------|
+| Framework | NestJS + TypeScript (strict) |
+| Message broker | RabbitMQ (topic exchange) |
+| Job queues | BullMQ + Redis |
+| Database | MongoDB + Mongoose |
+| Cache / locks | Redis (ioredis) |
+| Channels | Email / SMS / Push (simulated), In-App (Socket.io) |
+| Scheduling | @nestjs/schedule |
+| Testing | Jest + mongodb-memory-server |
+
+## Quick Start
+
+The app runs locally; MongoDB, Redis, and RabbitMQ run in Docker.
 
 ```bash
-# unit tests
-$ npm run test
+# 1. Start infrastructure
+docker-compose up -d
 
-# e2e tests
-$ npm run test:e2e
+# 2. Configure environment
+cp .env.example .env
 
-# test coverage
-$ npm run test:cov
+# 3. Install dependencies
+npm install
+
+# 4. Seed templates + sample data
+npm run seed
+
+# 5. Run the app (watch mode)
+npm run start:dev
 ```
 
-## Deployment
+- REST API: `http://localhost:3000/api/v1`
+- WebSocket (in-app): port `3001`
+- RabbitMQ management UI: `http://localhost:15672` (guest/guest)
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### Trigger a notification
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+curl -X POST http://localhost:3000/api/v1/events \
+  -H "Content-Type: application/json" \
+  -d '{
+    "eventType": "order.placed",
+    "userId": "user123",
+    "tenantId": "tenant1",
+    "data": { "email": "you@example.com", "phone": "+15551234567", "orderId": "A-100" }
+  }'
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+## Key Endpoints
 
-## Resources
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/api/v1/events` | Ingest a notification event |
+| GET | `/api/v1/dashboard/stats` | Per-channel delivery analytics |
+| GET | `/api/v1/dashboard/stream` | SSE live stats feed |
+| GET | `/api/v1/notifications/:userId` | Per-user notification history |
+| GET/PUT | `/api/v1/preferences/:userId` | Read / update user preferences |
+| POST/GET/PUT/DELETE | `/api/v1/templates` | Template CRUD |
+| GET | `/api/v1/dlq` | List dead-lettered jobs |
+| POST | `/api/v1/dlq/:id/replay` | Replay a dead-lettered job |
+| DELETE | `/api/v1/dlq/:id/discard` | Discard a dead-lettered job |
+| GET | `/api/v1/health` | Health check |
 
-Check out a few resources that may come in handy when working with NestJS:
+## Testing
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```bash
+npm test                 # all unit + integration tests
+npm test -- preferences  # one module
+npm run test:cov         # coverage
+```
 
-## Support
+Tests use `mongodb-memory-server`, so no running database is required.
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## Common Commands
 
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+```bash
+docker-compose up -d      # start MongoDB, Redis, RabbitMQ
+npm run start:dev         # run in watch mode
+npm run seed              # seed templates + sample data
+npm run build             # production build
+```

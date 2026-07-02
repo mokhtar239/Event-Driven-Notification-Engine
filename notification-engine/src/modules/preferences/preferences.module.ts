@@ -4,6 +4,9 @@ import {
   UserPreference,
   UserPreferenceSchema,
 } from './schemas/user-preference.schema';
+import { PreferencesService } from './preferences.service';
+import { PreferenceRouter } from './preference-router.service';
+import { PreferencesController } from './preferences.controller';
 
 @Module({
   imports: [
@@ -11,6 +14,8 @@ import {
       { name: UserPreference.name, schema: UserPreferenceSchema },
     ]),
   ],
-  exports: [MongooseModule],
+  controllers: [PreferencesController],
+  providers: [PreferencesService, PreferenceRouter],
+  exports: [PreferencesService, PreferenceRouter, MongooseModule],
 })
 export class PreferencesModule {}

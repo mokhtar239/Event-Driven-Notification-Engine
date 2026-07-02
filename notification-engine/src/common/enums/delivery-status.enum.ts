@@ -12,4 +12,5 @@ export enum NotificationStatus {
   SENT = 'sent',
   PARTIAL = 'partial',
   FAILED = 'failed',
+  SUPPRESSED = 'suppressed',
 }

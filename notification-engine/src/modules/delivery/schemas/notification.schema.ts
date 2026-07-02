@@ -9,7 +9,7 @@ export type NotificationDocument = HydratedDocument<Notification>;
 @Schema({ timestamps: true, collection: 'notifications' })
 export class Notification {
   @Prop({ required: true, index: true })
-  eventType!: string; 
+  eventType!: string;
 
   @Prop({ required: true, index: true })
   userId!: string;

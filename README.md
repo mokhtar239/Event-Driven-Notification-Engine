@@ -1,4 +1,4 @@
-# Event-Driven Notification Engine
+# 🔔 Event-Driven Notification Engine
 
 A production-grade, multi-tenant, event-driven notification microservice built with **NestJS + TypeScript**. It consumes domain events (via RabbitMQ or REST), applies per-user delivery preferences, renders templates, and delivers multi-channel notifications (email, SMS, push, in-app) with retry logic, dead-letter queues, digest batching, delivery tracking, and analytics.
 
@@ -11,7 +11,7 @@ A production-grade, multi-tenant, event-driven notification microservice built w
 
 > The application lives in [`notification-engine/`](notification-engine/). Run all commands from that directory.
 
-## Features
+## ✨ Features
 
 - **Event ingestion** — RabbitMQ topic consumer + REST endpoint, with event-level idempotency (Redis `SET NX`).
 - **Preference-based routing** — per-user channel opt-out, quiet hours (timezone-aware), muted events (wildcards), and priority override (HIGH/CRITICAL bypasses quiet hours).
@@ -23,7 +23,7 @@ A production-grade, multi-tenant, event-driven notification microservice built w
 - **Digest batching** — hourly/daily email digests with a Redis `SET NX` distributed lock so only one instance runs the cron in a multi-instance deployment.
 - **Multi-tenancy** — `tenantId` on every document for row-level isolation.
 
-## Architecture
+## 🏗️ Architecture
 
 ```mermaid
 flowchart TD
@@ -81,7 +81,7 @@ flowchart TD
 - **Persist-then-emit for in-app** — every in-app notification is written to MongoDB first, then best-effort emitted via Socket.io, so offline users still receive their messages.
 - **Distributed digest cron** — a Redis `SET NX` lock ensures only one instance runs the hourly/daily digest flush.
 
-## Data Model
+## 🗄️ Data Model
 
 MongoDB collections (each has `_id`, `createdAt`, `updatedAt`). Relationships are application-level — MongoDB does not enforce foreign keys.
 
@@ -172,7 +172,7 @@ erDiagram
 
 Full details in [`notification-engine/docs/DB_SCHEMA.md`](notification-engine/docs/DB_SCHEMA.md).
 
-## Event Routing
+## 🔀 Event Routing
 
 | Event | Channels | Priority |
 |-------|----------|----------|
@@ -183,7 +183,7 @@ Full details in [`notification-engine/docs/DB_SCHEMA.md`](notification-engine/do
 | `friend.request` | In-App | Low |
 | `weekly.digest` | Email (batched) | Low |
 
-## Tech Stack
+## 🛠️ Tech Stack
 
 | Concern | Technology |
 |---------|------------|
@@ -197,7 +197,7 @@ Full details in [`notification-engine/docs/DB_SCHEMA.md`](notification-engine/do
 | Testing | Jest + mongodb-memory-server |
 | Containerization | Docker + docker-compose |
 
-## Quick Start
+## 🚀 Quick Start
 
 The app runs locally; MongoDB, Redis, and RabbitMQ run in Docker. Run from the `notification-engine/` directory.
 
@@ -235,7 +235,7 @@ curl -X POST http://localhost:3000/api/v1/events \
   }'
 ```
 
-## Key Endpoints
+## 📡 Key Endpoints
 
 | Method | Path | Description |
 |--------|------|-------------|
@@ -250,7 +250,7 @@ curl -X POST http://localhost:3000/api/v1/events \
 | DELETE | `/api/v1/dlq/:id/discard` | Discard a dead-lettered job |
 | GET | `/api/v1/health` | Health check |
 
-## Testing
+## 🧪 Testing
 
 ```bash
 npm test                 # all unit + integration tests
@@ -260,7 +260,7 @@ npm run test:cov         # coverage
 
 Tests use `mongodb-memory-server`, so no running database is required.
 
-## Roadmap
+## 🗺️ Roadmap
 
 | Phase | Step | Status |
 |-------|------|--------|
@@ -277,8 +277,8 @@ Tests use `mongodb-memory-server`, so no running database is required.
 | 11 | Delivery tracking + analytics | Done |
 | 12 | Analytics + SSE dashboard | Done |
 | 13 | Digest batching + distributed cron | Done |
-| 14 | Docker, Swagger, structured logging | In progress |
-| 15 | Comprehensive test suite (Jest + e2e) | In progress |
+| 14 | Docker, Swagger, structured logging | Done |
+| 15 | Comprehensive test suite (Jest + e2e) | Done |
 | 16 | CI/CD with GitHub Actions | Planned |
 | 17 | Auth, HMAC verification, rate limiting | Planned |
 | 18 | Field-level encryption + GDPR | Planned |
@@ -288,6 +288,6 @@ Tests use `mongodb-memory-server`, so no running database is required.
 | 22 | Kubernetes + Helm + Terraform | Planned |
 | 23 | ADRs + system design doc | Planned |
 
-## License
+## 📄 License
 
 MIT

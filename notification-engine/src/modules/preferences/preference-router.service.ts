@@ -8,7 +8,6 @@ import {
   DigestMode,
 } from './schemas/user-preference.schema';
 
-
 export interface RoutingDecision {
   channels: ChannelType[];
   suppressed: boolean;

@@ -62,7 +62,6 @@ export async function seedData(connection: Connection) {
     InappNotificationSchema,
   );
 
-  // Start clean so re-running the seed is deterministic.
   await Promise.all([
     NotificationModel.deleteMany({ tenantId: TENANT }),
     DeliveryLogModel.deleteMany({ tenantId: TENANT }),
@@ -71,13 +70,16 @@ export async function seedData(connection: Connection) {
     InappNotificationModel.deleteMany({}),
   ]);
 
-  // ---- user_preferences ----------------------------------------------------
   await UserPreferenceModel.insertMany([
     {
       userId: 'user-alice',
       tenantId: TENANT,
       channels: { email: true, sms: true, push: true, inapp: true },
-      quietHours: { start: '22:00', end: '08:00', timezone: 'America/New_York' },
+      quietHours: {
+        start: '22:00',
+        end: '08:00',
+        timezone: 'America/New_York',
+      },
       digestMode: 'instant',
       mutedEvents: [],
     },
@@ -107,9 +109,6 @@ export async function seedData(connection: Connection) {
     },
   ]);
 
-  // ---- notifications + delivery_logs --------------------------------------
-  // Each entry describes a notification and the outcome of every channel, so the
-  // parent status matches what rollupNotification() would compute.
   type ChannelOutcome = {
     channel: ChannelType;
     status: DeliveryStatus;
@@ -132,8 +131,16 @@ export async function seedData(connection: Connection) {
       status: NotificationStatus.SENT,
       ageMinutes: 60 * 24 * 3,
       outcomes: [
-        { channel: ChannelType.EMAIL, status: DeliveryStatus.DELIVERED, attempts: 1 },
-        { channel: ChannelType.INAPP, status: DeliveryStatus.DELIVERED, attempts: 1 },
+        {
+          channel: ChannelType.EMAIL,
+          status: DeliveryStatus.DELIVERED,
+          attempts: 1,
+        },
+        {
+          channel: ChannelType.INAPP,
+          status: DeliveryStatus.DELIVERED,
+          attempts: 1,
+        },
       ],
     },
     {
@@ -143,14 +150,22 @@ export async function seedData(connection: Connection) {
       status: NotificationStatus.PARTIAL,
       ageMinutes: 60 * 5,
       outcomes: [
-        { channel: ChannelType.EMAIL, status: DeliveryStatus.DELIVERED, attempts: 1 },
+        {
+          channel: ChannelType.EMAIL,
+          status: DeliveryStatus.DELIVERED,
+          attempts: 1,
+        },
         {
           channel: ChannelType.SMS,
           status: DeliveryStatus.FAILED,
           attempts: 5,
           lastError: 'SMS provider temporarily unavailable',
         },
-        { channel: ChannelType.INAPP, status: DeliveryStatus.DELIVERED, attempts: 1 },
+        {
+          channel: ChannelType.INAPP,
+          status: DeliveryStatus.DELIVERED,
+          attempts: 1,
+        },
       ],
     },
     {
@@ -160,8 +175,16 @@ export async function seedData(connection: Connection) {
       status: NotificationStatus.SENT,
       ageMinutes: 60 * 8,
       outcomes: [
-        { channel: ChannelType.SMS, status: DeliveryStatus.DELIVERED, attempts: 2 },
-        { channel: ChannelType.PUSH, status: DeliveryStatus.DELIVERED, attempts: 1 },
+        {
+          channel: ChannelType.SMS,
+          status: DeliveryStatus.DELIVERED,
+          attempts: 2,
+        },
+        {
+          channel: ChannelType.PUSH,
+          status: DeliveryStatus.DELIVERED,
+          attempts: 1,
+        },
       ],
     },
     {
@@ -175,7 +198,7 @@ export async function seedData(connection: Connection) {
           channel: ChannelType.EMAIL,
           status: DeliveryStatus.DLQ,
           attempts: 3,
-          lastError: 'Invalid \'to\' address: bademail',
+          lastError: "Invalid 'to' address: bademail",
         },
         {
           channel: ChannelType.SMS,
@@ -192,7 +215,11 @@ export async function seedData(connection: Connection) {
       status: NotificationStatus.SENT,
       ageMinutes: 45,
       outcomes: [
-        { channel: ChannelType.INAPP, status: DeliveryStatus.DELIVERED, attempts: 1 },
+        {
+          channel: ChannelType.INAPP,
+          status: DeliveryStatus.DELIVERED,
+          attempts: 1,
+        },
       ],
     },
     {
@@ -201,7 +228,7 @@ export async function seedData(connection: Connection) {
       priority: EventPriority.NORMAL,
       status: NotificationStatus.SUPPRESSED,
       ageMinutes: 30,
-      // All channels opted out (carol disabled email + sms) → suppressed, no logs.
+
       outcomes: [],
     },
     {
@@ -211,9 +238,21 @@ export async function seedData(connection: Connection) {
       status: NotificationStatus.PROCESSING,
       ageMinutes: 2,
       outcomes: [
-        { channel: ChannelType.EMAIL, status: DeliveryStatus.DELIVERED, attempts: 1 },
-        { channel: ChannelType.SMS, status: DeliveryStatus.PROCESSING, attempts: 1 },
-        { channel: ChannelType.INAPP, status: DeliveryStatus.QUEUED, attempts: 0 },
+        {
+          channel: ChannelType.EMAIL,
+          status: DeliveryStatus.DELIVERED,
+          attempts: 1,
+        },
+        {
+          channel: ChannelType.SMS,
+          status: DeliveryStatus.PROCESSING,
+          attempts: 1,
+        },
+        {
+          channel: ChannelType.INAPP,
+          status: DeliveryStatus.QUEUED,
+          attempts: 0,
+        },
       ],
     },
   ];
@@ -269,7 +308,6 @@ export async function seedData(connection: Connection) {
       });
       logCount++;
 
-      // Mirror DLQ rows into the dead_letters collection.
       if (o.status === DeliveryStatus.DLQ) {
         await DeadLetterModel.create({
           notificationId: notif._id,
@@ -296,7 +334,6 @@ export async function seedData(connection: Connection) {
     }
   }
 
-  // ---- inapp_notifications (read/unread feed) ------------------------------
   await InappNotificationModel.insertMany([
     {
       userId: 'user-alice',

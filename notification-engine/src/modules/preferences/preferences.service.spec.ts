@@ -10,12 +10,6 @@ import {
   DigestMode,
 } from './schemas/user-preference.schema';
 
-/**
- * Integration tests for PreferencesService — runs against a real (in-memory)
- * MongoDB so the Mongoose queries, upserts, and defaults are exercised for real
- * rather than mocked. mongodb-memory-server downloads a Mongo binary on first
- * run and serves it from a temp dir; nothing touches your Docker instance.
- */
 describe('PreferencesService (integration)', () => {
   let mongod: MongoMemoryServer;
   let service: PreferencesService;
@@ -52,7 +46,7 @@ describe('PreferencesService (integration)', () => {
 
       expect(doc.userId).toBe('u1');
       expect(doc.tenantId).toBe('t1');
-      // Schema defaults: all channels on, instant digest, no mutes.
+
       expect(doc.channels.email).toBe(true);
       expect(doc.channels.sms).toBe(true);
       expect(doc.digestMode).toBe(DigestMode.INSTANT);
@@ -79,7 +73,7 @@ describe('PreferencesService (integration)', () => {
       });
 
       expect(updated.channels.sms).toBe(false);
-      // Untouched flags keep their defaults.
+
       expect(updated.channels.email).toBe(true);
     });
 

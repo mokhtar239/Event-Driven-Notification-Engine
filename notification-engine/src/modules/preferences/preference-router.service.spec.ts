@@ -4,19 +4,10 @@ import { DigestMode } from './schemas/user-preference.schema';
 import { ChannelType } from '../../common/enums/channel-type.enum';
 import { EventPriority } from '../../common/enums/event-priority.enum';
 
-/**
- * Unit tests for PreferenceRouter — pure decision logic.
- *
- * PreferencesService is the only dependency and it just returns a prefs doc, so
- * we mock it with a plain object instead of spinning up a NestJS testing module
- * or a database. Each test arranges a fake prefs result, runs route(), and
- * asserts on the returned decision.
- */
 describe('PreferenceRouter', () => {
   let router: PreferenceRouter;
   let getOrCreate: jest.Mock;
 
-  // Helper to build a prefs doc with sensible defaults, overridable per test.
   const prefs = (overrides: Partial<Record<string, unknown>> = {}) => ({
     channels: { email: true, sms: true, push: true, inapp: true },
     quietHours: { timezone: 'UTC' },
@@ -148,13 +139,11 @@ describe('PreferenceRouter', () => {
   });
 
   describe('quiet hours', () => {
-    // Build a window guaranteed to contain "now" in UTC so the test is stable
-    // regardless of when it runs.
     const windowAroundNow = () => {
       const now = new Date();
       const pad = (n: number) => String(n).padStart(2, '0');
-      const start = pad((now.getUTCHours() + 23) % 24); // 1h ago
-      const end = pad((now.getUTCHours() + 1) % 24); // 1h ahead
+      const start = pad((now.getUTCHours() + 23) % 24);
+      const end = pad((now.getUTCHours() + 1) % 24);
       return { start: `${start}:00`, end: `${end}:00`, timezone: 'UTC' };
     };
 

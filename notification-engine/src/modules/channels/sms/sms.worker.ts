@@ -25,7 +25,6 @@ export class SmsWorker extends WorkerHost {
   async process(job: Job<NotificationJobData>): Promise<void> {
     const { event, tenantId, variables, NotificationId } = job.data;
 
-    // Idempotency guard: skip if this (notification, channel) already delivered.
     if (
       await this.delivery.isAlreadyDelivered(NotificationId, ChannelType.SMS)
     ) {

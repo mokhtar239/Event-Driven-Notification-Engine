@@ -14,7 +14,6 @@ export class PreferencesService {
     private readonly prefModel: Model<UserPreferenceDocument>,
   ) {}
 
-
   async getOrCreate(
     tenantId: string,
     userId: string,
@@ -28,7 +27,6 @@ export class PreferencesService {
       .exec();
   }
 
-  
   async update(
     tenantId: string,
     userId: string,

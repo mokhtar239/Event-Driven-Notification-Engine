@@ -4,19 +4,10 @@ import { IChannel, ChannelPayload } from '@common/interfaces/channel.interface';
 import { DeliveryResult } from '@common/interfaces/delivery-result.interface';
 import { makeBreaker } from '@common/resilience/circuit-breaker';
 
-/**
- * Simulated SMS channel. Mimics the shape of a Twilio client without making
- * real network calls. Failures throw errors carrying a numeric `code` so that
- * `throwClassifiedSms` can distinguish permanent vs. transient.
- *
- * The external call is wrapped in an opossum circuit breaker so a sustained
- * provider outage fast-fails instead of hammering the provider.
- */
 @Injectable()
 export class SmsService implements IChannel {
   private readonly logger = new Logger(SmsService.name);
 
-  // ~3% simulated transient failure rate.
   private readonly failureRate = 0.03;
 
   private readonly breaker: CircuitBreaker<[ChannelPayload], DeliveryResult>;
@@ -44,14 +35,12 @@ export class SmsService implements IChannel {
     await this.simulateLatency();
 
     if (!payload.to || !/^\+?[1-9]\d{6,14}$/.test(payload.to)) {
-      // Permanent: invalid 'To' number (Twilio code 21211).
       throw Object.assign(new Error(`Invalid 'To' number: ${payload.to}`), {
         code: 21211,
       });
     }
 
     if (Math.random() < this.failureRate) {
-      // Transient: simulate a 503 from the provider.
       throw Object.assign(new Error('SMS provider temporarily unavailable'), {
         statusCode: 503,
       });

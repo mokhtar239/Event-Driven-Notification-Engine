@@ -55,11 +55,7 @@ export class EventRouter {
     else if (channel === ChannelType.INAPP) return this.inappQueue;
     throw new Error(`No queue for this channel`);
   }
-  /**
-   * Dispatches one job per channel. `channels` is the preference-filtered list
-   * from the PreferenceRouter — NOT the raw routing table — so opted-out and
-   * quiet-hours-suppressed channels never reach a queue.
-   */
+
   async dispatch(
     event: NotificationEventDto,
     notificationId: string,

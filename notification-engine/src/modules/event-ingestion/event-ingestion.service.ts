@@ -59,8 +59,6 @@ export class EventIngestionService {
       return { success: false, correlationId };
     }
 
-    // Apply user preferences: mute → channel opt-out → quiet hours →
-    // priority override. The result is the channels we will actually dispatch.
     const decision = await this.preferenceRouter.route(
       event.tenantId,
       event.userId,
@@ -69,9 +67,6 @@ export class EventIngestionService {
       route.priority,
     );
 
-    // Create the parent Notification doc — its _id is the notificationId used
-    // by every channel's DeliveryLog / DeadLetter downstream. `channels`
-    // records what we actually intend to deliver after preference filtering.
     const notif = await this.notifModel.create({
       eventType: event.eventType,
       userId: event.userId,
@@ -95,8 +90,6 @@ export class EventIngestionService {
       return { success: true, correlationId, notificationId };
     }
 
-    // Digest diversion: for hourly/daily users, buffer the EMAIL channel into a
-    // digest instead of sending now. Other channels still dispatch immediately.
     let channelsToDispatch = decision.channels;
     const isDigest =
       decision.digestMode === DigestMode.HOURLY ||
@@ -141,7 +134,6 @@ export class EventIngestionService {
     return { success: true, correlationId, notificationId };
   }
 
-  /** One-line summary of an event for inclusion in a digest email. */
   private summarize(event: Event): string {
     const data = event.data ?? {};
     const orderId = data.orderId as string | undefined;

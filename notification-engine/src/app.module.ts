@@ -1,6 +1,8 @@
 import { RedisModule } from './modules/redis/redis.module';
 import { Module } from '@nestjs/common';
+import { LoggerModule } from 'nestjs-pino';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { buildLoggerParams } from './config/logger.config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -20,6 +22,7 @@ import { BullModule } from '@nestjs/bullmq';
       isGlobal: true,
       validationSchema: envSchema,
     }),
+    LoggerModule.forRoot(buildLoggerParams()),
     MongooseModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({

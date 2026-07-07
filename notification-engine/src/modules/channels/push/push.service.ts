@@ -8,7 +8,6 @@ import { makeBreaker } from '@common/resilience/circuit-breaker';
 export class PushService implements IChannel {
   private readonly logger = new Logger(PushService.name);
 
-  // ~3% simulated transient failure rate.
   private readonly failureRate = 0.03;
 
   private readonly breaker: CircuitBreaker<[ChannelPayload], DeliveryResult>;
@@ -36,14 +35,12 @@ export class PushService implements IChannel {
     await this.simulateLatency();
 
     if (!payload.to || payload.to.length < 10) {
-      // Permanent: invalid device token.
       throw Object.assign(new Error('Invalid registration token'), {
         code: 'messaging/invalid-registration-token',
       });
     }
 
     if (Math.random() < this.failureRate) {
-      // Transient: simulate FCM server unavailable.
       throw Object.assign(new Error('FCM server unavailable'), {
         code: 'messaging/server-unavailable',
       });

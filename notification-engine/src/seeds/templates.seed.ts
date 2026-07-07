@@ -14,7 +14,6 @@ interface SeedTemplate {
 }
 
 const TEMPLATES: SeedTemplate[] = [
-  // user.signup
   {
     tenantId: 'default',
     eventType: 'user.signup',
@@ -30,13 +29,12 @@ const TEMPLATES: SeedTemplate[] = [
     body: 'Welcome, {{firstName}}! Tap here to complete your profile.',
   },
 
-  // order.placed
   {
     tenantId: 'default',
     eventType: 'order.placed',
     channel: ChannelType.EMAIL,
     subject: 'Order #{{orderId}} confirmed',
-    body: 'Hi {{firstName}},\n\nYour order #{{orderId}} for {{currency total}} has been confirmed. We\'ll email tracking details once it ships.\n\nItems: {{itemCount}}\n\nThank you for shopping with us.',
+    body: "Hi {{firstName}},\n\nYour order #{{orderId}} for {{currency total}} has been confirmed. We'll email tracking details once it ships.\n\nItems: {{itemCount}}\n\nThank you for shopping with us.",
   },
   {
     tenantId: 'default',
@@ -52,7 +50,6 @@ const TEMPLATES: SeedTemplate[] = [
     body: 'Your order #{{orderId}} for {{currency total}} is confirmed.',
   },
 
-  // order.shipped
   {
     tenantId: 'default',
     eventType: 'order.shipped',
@@ -67,7 +64,6 @@ const TEMPLATES: SeedTemplate[] = [
     body: 'Order #{{orderId}} shipped via {{carrier}}. Estimated delivery: {{eta}}.',
   },
 
-  // payment.failed
   {
     tenantId: 'default',
     eventType: 'payment.failed',
@@ -82,7 +78,6 @@ const TEMPLATES: SeedTemplate[] = [
     body: 'Acme: Payment of {{currency amount}} for order #{{orderId}} failed. Update at {{retryUrl}}',
   },
 
-  // friend.request
   {
     tenantId: 'default',
     eventType: 'friend.request',
@@ -91,13 +86,12 @@ const TEMPLATES: SeedTemplate[] = [
     body: '{{actorName}} sent you a friend request.',
   },
 
-  // weekly.digest
   {
     tenantId: 'default',
     eventType: 'weekly.digest',
     channel: ChannelType.EMAIL,
     subject: 'Your weekly digest — {{weekOf}}',
-    body: 'Hi {{firstName}},\n\nHere\'s what you missed this week:\n\n- {{newOrdersCount}} new orders\n- {{messagesCount}} unread messages\n- {{notificationsCount}} other notifications\n\nView all at {{dashboardUrl}}',
+    body: "Hi {{firstName}},\n\nHere's what you missed this week:\n\n- {{newOrdersCount}} new orders\n- {{messagesCount}} unread messages\n- {{notificationsCount}} other notifications\n\nView all at {{dashboardUrl}}",
   },
 ];
 

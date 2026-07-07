@@ -8,9 +8,7 @@ describe('HealthController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [HealthController],
-      providers: [
-        { provide: AmqpConnection, useValue: { connected: true } },
-      ],
+      providers: [{ provide: AmqpConnection, useValue: { connected: true } }],
     }).compile();
 
     controller = module.get<HealthController>(HealthController);

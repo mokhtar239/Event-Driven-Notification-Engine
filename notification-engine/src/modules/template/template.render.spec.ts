@@ -1,9 +1,5 @@
 import { TemplateRender } from './template.render';
 
-/**
- * Unit tests for TemplateRender — Handlebars interpolation + custom helpers.
- * No deps, just construct it and render.
- */
 describe('TemplateRender', () => {
   let renderer: TemplateRender;
 
@@ -48,7 +44,7 @@ describe('TemplateRender', () => {
       const second = renderer.renderCashed('k1', 'IGNORED', { name: 'Dave' });
 
       expect(first).toBe('Hi Carol');
-      // Same key → cached compiled fn is reused, second template text ignored.
+
       expect(second).toBe('Hi Dave');
     });
   });

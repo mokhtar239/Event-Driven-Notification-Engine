@@ -29,7 +29,6 @@ export class DigestService {
     private readonly email: EmailService,
   ) {}
 
-  /** Buffer a notification for a digest-mode user instead of sending now. */
   async buffer(item: DigestItemInput): Promise<void> {
     await this.batchModel.create({
       userId: item.userId,
@@ -46,11 +45,6 @@ export class DigestService {
     );
   }
 
-  /**
-   * Collect all PENDING items for the given mode, group by (tenantId, userId),
-   * render and send one digest email per user, then mark the items SENT.
-   * Returns the number of digests sent. Empty buckets are skipped.
-   */
   async flush(mode: DigestMode): Promise<number> {
     const pending = await this.batchModel
       .find({ mode, status: DigestItemStatus.PENDING })
@@ -62,7 +56,6 @@ export class DigestService {
       return 0;
     }
 
-    // Group items by tenant+user.
     const groups = new Map<string, typeof pending>();
     for (const item of pending) {
       const key = `${item.tenantId}::${item.userId}`;
@@ -90,7 +83,6 @@ export class DigestService {
           `Digest sent: user=${userId} mode=${mode} items=${items.length}`,
         );
       } catch (err) {
-        // Leave items PENDING so the next run retries them.
         this.logger.error(
           `Digest send failed: user=${userId} mode=${mode}: ${
             err instanceof Error ? err.message : String(err)

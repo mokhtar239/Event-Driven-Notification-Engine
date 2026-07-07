@@ -12,11 +12,6 @@ import {
   DigestItemStatus,
 } from './schemas/digest-batch.schema';
 
-/**
- * Integration tests for DigestService — buffering and flushing run against a
- * real in-memory MongoDB. EmailService is mocked so no email is actually sent;
- * we assert on what would be sent and on the resulting item statuses.
- */
 describe('DigestService (integration)', () => {
   let mongod: MongoMemoryServer;
   let service: DigestService;
@@ -44,10 +39,7 @@ describe('DigestService (integration)', () => {
           { name: DigestBatch.name, schema: DigestBatchSchema },
         ]),
       ],
-      providers: [
-        DigestService,
-        { provide: EmailService, useValue: email },
-      ],
+      providers: [DigestService, { provide: EmailService, useValue: email }],
     }).compile();
 
     service = moduleRef.get(DigestService);
@@ -79,9 +71,9 @@ describe('DigestService (integration)', () => {
 
     const sent = await service.flush(DigestMode.DAILY);
 
-    expect(sent).toBe(1); // one user → one digest
+    expect(sent).toBe(1);
     expect(email.send).toHaveBeenCalledTimes(1);
-    // Both items now SENT.
+
     const pending = await model.countDocuments({
       status: DigestItemStatus.PENDING,
     });
@@ -115,7 +107,7 @@ describe('DigestService (integration)', () => {
     const pending = await model.countDocuments({
       status: DigestItemStatus.PENDING,
     });
-    expect(pending).toBe(1); // retried next run
+    expect(pending).toBe(1);
   });
 
   it('only flushes the requested mode', async () => {
@@ -124,7 +116,6 @@ describe('DigestService (integration)', () => {
 
     await service.flush(DigestMode.DAILY);
 
-    // The HOURLY item is untouched.
     const hourlyPending = await model.countDocuments({
       mode: DigestMode.HOURLY,
       status: DigestItemStatus.PENDING,

@@ -8,8 +8,8 @@ import { TemplateRender } from './template.render';
 import { CreateTemplateDto } from './dto/create-template.dto';
 import { UpdateTemplateDto } from './dto/update-template.dto';
 
-const TEMPLATE_CACHE_TTL = 60 * 60; // 1 hour
-const TEMPLATE_LOCK_TTL = 5; // 5 second
+const TEMPLATE_CACHE_TTL = 60 * 60;
+const TEMPLATE_LOCK_TTL = 5;
 
 @Injectable()
 export class TemplateService {
@@ -48,7 +48,6 @@ export class TemplateService {
       'NX',
     );
     if (!gotLock) {
-      // wait some time and retry
       for (let i = 0; i < 5; i++) {
         await new Promise((resolve) => setTimeout(resolve, 50));
         const cached = await this.redisClient.get(key);
@@ -57,7 +56,7 @@ export class TemplateService {
         }
       }
     }
-    // got lock , or retry failed, query db
+
     try {
       console.log('query db excute');
       const template = await this.templateModel

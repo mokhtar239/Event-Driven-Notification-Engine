@@ -5,10 +5,6 @@ import {
 } from './classify-error';
 import { UnrecoverableError } from 'bullmq';
 
-/**
- * Unit tests for the shared error classifier. Pure functions, no deps — just
- * feed error-shaped objects and assert transient vs permanent.
- */
 describe('classifyHttpAndNetwork', () => {
   it('classifies transient network codes as transient', () => {
     expect(classifyHttpAndNetwork({ code: 'ETIMEDOUT' })).toBe('transient');

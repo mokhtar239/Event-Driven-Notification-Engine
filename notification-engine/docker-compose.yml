@@ -11,6 +11,11 @@ services:
       - mongo-data:/data/db
     environment:
       MONGO_INITDB_DATABASE: notifications
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis:
     image: redis:7-alpine
@@ -20,6 +25,11 @@ services:
       - '6379:6379'
     volumes:
       - redis-data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   rabbitmq:
     image: rabbitmq:3-management
@@ -33,6 +43,38 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
+      interval: 15s
+      timeout: 10s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: notification-app
+    restart: unless-stopped
+    ports:
+      - '3000:3000'
+      - '3001:3001'
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      WS_PORT: 3001
+      LOG_LEVEL: info
+      # In-network service hostnames (not localhost).
+      MONGO_URI: mongodb://mongodb:27017/notifications
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
 
 volumes:
   mongo-data:

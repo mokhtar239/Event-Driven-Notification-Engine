@@ -8,17 +8,10 @@ import {
   InappNotificationDocument,
 } from './schemas/inapp-notification.schema';
 
-/**
- * In-app channel. Unlike email/sms/push there is no external provider — the
- * MongoDB write IS the real delivery (source of truth for the offline story),
- * so it is kept real. Only a small transient "infra hiccup" is simulated, and
- * it is thrown BEFORE the write so a failed job never leaves a phantom doc.
- */
 @Injectable()
 export class InappService implements IChannel {
   private readonly logger = new Logger(InappService.name);
 
-  // ~2% simulated transient failure rate (e.g. DB/network hiccup).
   private readonly failureRate = 0.02;
 
   constructor(
@@ -28,13 +21,11 @@ export class InappService implements IChannel {
 
   async send(payload: ChannelPayload): Promise<DeliveryResult> {
     if (Math.random() < this.failureRate) {
-      // Transient: simulate a datastore hiccup so retry/DLQ paths get exercised.
       throw Object.assign(new Error('In-app store temporarily unavailable'), {
         code: 'ECONNRESET',
       });
     }
 
-    // Real delivery: persist the notification (kept, never simulated away).
     const doc = await this.model.create({
       userId: payload.to,
       subject: payload.subject,

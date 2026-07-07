@@ -21,7 +21,6 @@ export class DeadLetter {
   @Prop({ type: String, enum: ChannelType, required: true, index: true })
   channel!: ChannelType;
 
-  /** The full BullMQ job payload, so it can be replayed verbatim. */
   @Prop({ type: Object, required: true })
   payload!: NotificationJobData;
 
@@ -31,7 +30,6 @@ export class DeadLetter {
   @Prop({ default: 0 })
   attempts!: number;
 
-  /** Set true once an admin replays it (kept for audit). */
   @Prop({ default: false, index: true })
   replayed!: boolean;
 }

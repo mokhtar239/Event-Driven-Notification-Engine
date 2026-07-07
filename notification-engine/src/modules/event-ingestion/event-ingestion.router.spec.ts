@@ -3,11 +3,6 @@ import { ChannelType } from '../../common/enums/channel-type.enum';
 import { EventPriority } from '../../common/enums/event-priority.enum';
 import { NotificationEventDto } from '../../common/dto/notification-event.dto';
 
-/**
- * Unit tests for EventRouter — routing-table resolution and per-channel
- * dispatch. The four BullMQ queues are mocked so we can assert what gets
- * enqueued without a real Redis.
- */
 describe('EventRouter', () => {
   let router: EventRouter;
   let email: { add: jest.Mock };

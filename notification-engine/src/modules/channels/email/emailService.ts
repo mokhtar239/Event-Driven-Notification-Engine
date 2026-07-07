@@ -4,20 +4,10 @@ import { IChannel, ChannelPayload } from '@common/interfaces/channel.interface';
 import { DeliveryResult } from '@common/interfaces/delivery-result.interface';
 import { makeBreaker } from '@common/resilience/circuit-breaker';
 
-/**
- * Simulated email channel. Mimics the shape of the Resend client without making
- * real network calls. Failures throw errors carrying `statusCode` so that
- * `throwClassifiedEmail` (generic HTTP classifier) can distinguish permanent
- * vs. transient.
- *
- * The external call is wrapped in an opossum circuit breaker so a sustained
- * provider outage fast-fails instead of hammering the provider.
- */
 @Injectable()
 export class EmailService implements IChannel {
   private readonly logger = new Logger(EmailService.name);
 
-  // ~3% simulated transient failure rate.
   private readonly failureRate = 0.03;
 
   private readonly breaker: CircuitBreaker<[ChannelPayload], DeliveryResult>;
@@ -45,7 +35,6 @@ export class EmailService implements IChannel {
     await this.simulateLatency();
 
     if (!payload.to || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(payload.to)) {
-      // Permanent: invalid recipient (Resend returns 422).
       throw Object.assign(new Error(`Invalid 'to' address: ${payload.to}`), {
         name: 'validation_error',
         statusCode: 422,
@@ -53,7 +42,6 @@ export class EmailService implements IChannel {
     }
 
     if (Math.random() < this.failureRate) {
-      // Transient: simulate a 503 from the provider.
       throw Object.assign(new Error('Email provider temporarily unavailable'), {
         name: 'application_error',
         statusCode: 503,

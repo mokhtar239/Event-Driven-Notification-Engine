@@ -30,7 +30,6 @@ export class DeliveryService {
     return new Types.ObjectId(id);
   }
 
-  /** Called at the START of process(): upsert the row to PROCESSING + bump attempts. */
   async markProcessing(
     notificationId: string,
     tenantId: string,
@@ -47,7 +46,6 @@ export class DeliveryService {
     );
   }
 
-  /** Called on successful send. */
   async markDelivered(
     notificationId: string,
     channel: ChannelType,
@@ -66,7 +64,6 @@ export class DeliveryService {
     await this.rollupNotification(notificationId);
   }
 
-  /** Called on each failed attempt (still has retries left). */
   async markFailed(
     notificationId: string,
     channel: ChannelType,
@@ -78,7 +75,6 @@ export class DeliveryService {
     );
   }
 
-  /** Called when retries are exhausted (from the worker's 'failed' event). */
   async markDlq(
     notificationId: string,
     channel: ChannelType,
@@ -91,10 +87,6 @@ export class DeliveryService {
     await this.rollupNotification(notificationId);
   }
 
-  /**
-   * Whether a (notification, channel) has already been DELIVERED — used by the
-   * worker idempotency guard to avoid double-sending on replay/duplicate jobs.
-   */
   async isAlreadyDelivered(
     notificationId: string,
     channel: ChannelType,
@@ -109,13 +101,6 @@ export class DeliveryService {
     return !!existing;
   }
 
-  /**
-   * Recompute parent Notification.status from all its channel logs.
-   *  - every channel DELIVERED            -> SENT
-   *  - some delivered, some not           -> PARTIAL
-   *  - none delivered (all settled)       -> FAILED
-   *  - still in flight                    -> PROCESSING
-   */
   async rollupNotification(notificationId: string): Promise<void> {
     const notif = await this.notifModel
       .findById(this.oid(notificationId))
@@ -155,18 +140,13 @@ export class DeliveryService {
     );
   }
 
-  /**
-   * Per-channel delivery analytics over delivery_logs. Returns, for each channel:
-   * total rows, delivered/failed/dlq counts, delivery rate, failure rate, and
-   * average delivery time in ms (deliveredAt - createdAt, delivered rows only).
-   *
-   * Optionally scoped by tenantId and a createdAt date range.
-   */
-  async getStats(filter: {
-    tenantId?: string;
-    from?: Date;
-    to?: Date;
-  } = {}): Promise<ChannelStats[]> {
+  async getStats(
+    filter: {
+      tenantId?: string;
+      from?: Date;
+      to?: Date;
+    } = {},
+  ): Promise<ChannelStats[]> {
     const match: Record<string, unknown> = {};
     if (filter.tenantId) match.tenantId = filter.tenantId;
     if (filter.from || filter.to) {
@@ -191,11 +171,7 @@ export class DeliveryService {
           total: { $sum: 1 },
           delivered: {
             $sum: {
-              $cond: [
-                { $eq: ['$status', DeliveryStatus.DELIVERED] },
-                1,
-                0,
-              ],
+              $cond: [{ $eq: ['$status', DeliveryStatus.DELIVERED] }, 1, 0],
             },
           },
           failed: {
@@ -238,7 +214,8 @@ export class DeliveryService {
         dlq: r.dlq,
         deliveryRate: Number(deliveryRate.toFixed(4)),
         failureRate: Number(failureRate.toFixed(4)),
-        avgDeliveryMs: r.avgDeliveryMs != null ? Math.round(r.avgDeliveryMs) : null,
+        avgDeliveryMs:
+          r.avgDeliveryMs != null ? Math.round(r.avgDeliveryMs) : null,
       };
     });
   }

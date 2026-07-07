@@ -35,7 +35,6 @@ export class DlqService {
     }
   }
 
-  /** Called by a worker when a job exhausts its retries (or hits a permanent error). */
   async deadLetter(
     payload: NotificationJobData,
     channel: ChannelType,
@@ -51,13 +50,12 @@ export class DlqService {
       error: message,
       attempts,
     });
-    // Admin alert (structured log for now; hook a real alerter here later).
+
     this.logger.warn(
       `[DLQ-ALERT] notificationId=${payload.NotificationId} channel=${channel} attempts=${attempts}: ${message}`,
     );
   }
 
-  /** GET /dlq — list dead-lettered entries (optionally filtered). */
   async list(filter: { tenantId?: string; channel?: ChannelType } = {}) {
     const query: Record<string, unknown> = { replayed: false };
     if (filter.tenantId) query.tenantId = filter.tenantId;
@@ -65,7 +63,6 @@ export class DlqService {
     return this.dlqModel.find(query).sort({ createdAt: -1 }).limit(200).lean();
   }
 
-  /** POST /dlq/:id/replay — re-enqueue the stored job onto its channel queue. */
   async replay(id: string) {
     const entry = await this.dlqModel.findById(id);
     if (!entry) throw new NotFoundException(`DLQ entry ${id} not found`);
@@ -80,7 +77,6 @@ export class DlqService {
     return { replayed: true, id, channel: entry.channel };
   }
 
-  /** DELETE /dlq/:id/discard — drop a dead-lettered entry. */
   async discard(id: string) {
     const res = await this.dlqModel.findByIdAndDelete(id).lean();
     if (!res) throw new NotFoundException(`DLQ entry ${id} not found`);

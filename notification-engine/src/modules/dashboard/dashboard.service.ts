@@ -5,10 +5,7 @@ import {
   Notification,
   NotificationDocument,
 } from '../delivery/schemas/notification.schema';
-import {
-  DeliveryService,
-  ChannelStats,
-} from '../delivery/delivery.service';
+import { DeliveryService, ChannelStats } from '../delivery/delivery.service';
 
 export interface UserHistoryPage {
   userId: string;
@@ -53,6 +50,12 @@ export class DashboardService {
       this.notifModel.countDocuments(query),
     ]);
 
-    return { userId, page, limit, total, items: items as NotificationDocument[] };
+    return {
+      userId,
+      page,
+      limit,
+      total,
+      items: items as NotificationDocument[],
+    };
   }
 }

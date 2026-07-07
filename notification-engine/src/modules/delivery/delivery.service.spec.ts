@@ -16,11 +16,6 @@ import {
 import { ChannelType } from '../../common/enums/channel-type.enum';
 import { NotificationStatus } from '../../common/enums/delivery-status.enum';
 
-/**
- * Integration tests for DeliveryService — the per-attempt tracking, the parent
- * status rollup FSM, and the getStats aggregation. Runs against in-memory Mongo
- * so the aggregation pipeline is exercised for real.
- */
 describe('DeliveryService (integration)', () => {
   let mongod: MongoMemoryServer;
   let service: DeliveryService;
